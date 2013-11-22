@@ -15,6 +15,32 @@ using System.Text;
 
 namespace Lua.Ast
 {
+    public enum BinaryOp
+    {
+        Addition,
+        Subtraction,
+        Multiplication,
+        Division,
+        Power,
+        Modulo,
+        Concat,
+        GreaterThan,
+        GreaterOrEqual,
+        LessThan,
+        LessOrEqual,
+        Equal,
+        Different,
+        And,
+        Or
+    }
+
+    public enum UnaryOp
+    {
+        Negate,
+        Invert,
+        Length
+    }
+
     public interface IStatement
     { }
 
@@ -74,6 +100,18 @@ namespace Lua.Ast
         public Block Body;
     }
 
+    public class BinaryExpression : IExpression
+    {
+        public IExpression Left, Right;
+        public BinaryOp Operation;
+    }
+
+    public class UnaryExpression : IExpression
+    {
+        public IExpression Expression;
+        public UnaryOp Operation;
+    }
+
     public class Assignment : IStatement
     {
         // Var1, Var2, Var3 = Exp1, Exp2, Exp3
@@ -90,8 +128,7 @@ namespace Lua.Ast
     }
 
     public class LocalAssignment : Assignment
-    {
-    }
+    { }
 
     public class Block : IStatement
     {
