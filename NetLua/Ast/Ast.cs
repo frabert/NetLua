@@ -134,4 +134,24 @@ namespace Lua.Ast
     {
         public List<IStatement> Statements;
     }
+
+    public class While : IStatement
+    {
+        public IExpression Condition;
+        public Block Block;
+    }
+
+    public class Repeat : IStatement
+    {
+        public Block Block;
+        public IExpression Condition;
+    }
+
+    public class If : IStatement
+    {
+        public IExpression Condition;
+        public Block Block;
+        public List<If> ElseIfs;
+        public Block ElseBlock;
+    }
 }
