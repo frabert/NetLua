@@ -1,13 +1,4 @@
-﻿/*
- * NetLua by Francesco Bertolaccini
- * Project inspired by AluminumLua, a project by Alexander Corrado
- * (See his repo at http://github.com/chkn/AluminumLua)
- * 
- * NetLua - a managed implementation of the Lua dynamic programming language
- * 
- * LuaContext.cs
- */
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

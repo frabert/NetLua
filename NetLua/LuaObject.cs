@@ -1,15 +1,4 @@
-﻿/*
- * NetLua by Francesco Bertolaccini
- * Project inspired by AluminumLua, a project by Alexander Corrado
- * (See his repo at http://github.com/chkn/AluminumLua)
- * 
- * NetLua - a managed implementation of the Lua dynamic programming language
- *
- * LuaObject.cs
- * Based on a work by Alexander Corrado for AluminumLua (https://github.com/chkn/AluminumLua/blob/master/src/LuaObject.cs)
- */
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
@@ -66,9 +55,8 @@ namespace Lua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public struct LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>>, IEquatable<LuaObject>
+    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>>, IEquatable<LuaObject>, ICloneable
     {
-
         private object luaobj;
         private LuaType type;
 
@@ -238,7 +226,7 @@ namespace Lua
         /// </summary>
         public double AsNumber()
         {
-            return (double)luaobj;
+            return (luaobj != null ? (double)luaobj : 0);
         }
         #endregion
 
@@ -398,7 +386,7 @@ namespace Lua
                 // we don't care whether the get was successful, because the default LuaObject is nil.
                 LuaObject result;
                 table.TryGetValue(key, out result);
-                return result;
+                return (result == null ? LuaObject.Nil : result);
             }
             set
             {
@@ -449,6 +437,15 @@ namespace Lua
             {
                 return (luaobj != null ? luaobj.GetHashCode() : 0) ^ type.GetHashCode();
             }
+        }
+
+        public object Clone()
+        {
+            LuaObject obj = new LuaObject();
+            obj.type = this.type;
+            obj.luaobj = this.luaobj;
+
+            return obj;
         }
     }
 }

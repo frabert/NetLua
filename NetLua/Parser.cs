@@ -10,71 +10,73 @@ namespace Lua
 {
     public class Parser
     {
-        public Parser(string parse)
+        public Ast.Block block;
+
+        LuaGrammar grammar = new LuaGrammar();
+        LanguageData language;
+        Irony.Parsing.Parser parser;
+
+        public Parser()
         {
-            LuaGrammar grammar = new LuaGrammar();
-            LanguageData language = new LanguageData(grammar);
-            Irony.Parsing.Parser parser = new Irony.Parsing.Parser(language);
-            ParseTree parseTree = parser.Parse(parse);
+            language = new LanguageData(grammar);
+            parser = new Irony.Parsing.Parser(language);
+        }
+
+        public Ast.Block ParseString(string Chunk)
+        {
+            ParseTree parseTree = parser.Parse(Chunk);
             ParseTreeNode root = parseTree.Root;
             if (root == null)
             {
-                for (int i = 0; i < parseTree.ParserMessages[0].Location.Column; i++)
-                {
-                    Console.Write(" ");
-                }
-                Console.WriteLine("^");
-                Console.WriteLine(parseTree.ParserMessages[0].Message);
-                return;
+                Irony.LogMessage msg = parseTree.ParserMessages[0];
+                throw new LuaException("", msg.Location.Line, msg.Location.Column, msg.Message);
             }
-
-            dispTree(root, 0);
-            ParseBlock(root);
+            return (ParseBlock(root));
         }
 
         #region Binary expression tree
-        Lua.Ast.IExpression ParseOrOp(ParseTreeNode node)
+        Ast.IExpression ParseOrOp(ParseTreeNode node)
         {
             if (node.Term.Name == "OrOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParseAndOp(left);
+                Ast.IExpression lexpr = ParseAndOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParseAndOp(right);
+                Ast.IExpression rexpr = ParseAndOp(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Lua.Ast.BinaryOp.Or };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Ast.BinaryOp.Or };
             }
             throw new Exception("Invalid OrOp node");
         }
 
-        Lua.Ast.IExpression ParseAndOp(ParseTreeNode node)
+        Ast.IExpression ParseAndOp(ParseTreeNode node)
         {
             if (node.Term.Name == "AndOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParseRelOp(left);
+                Ast.IExpression lexpr = ParseRelOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParseRelOp(right);
+                Ast.IExpression rexpr = ParseRelOp(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Lua.Ast.BinaryOp.And };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Ast.BinaryOp.And };
             }
             throw new Exception("Invalid AndOp node");
         }
 
-        Lua.Ast.IExpression ParseRelOp(ParseTreeNode node)
+        Ast.IExpression ParseRelOp(ParseTreeNode node)
         {
             if (node.Term.Name == "RelOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParseAddOp(left);
+                Ast.IExpression lexpr = ParseAddOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 string opstring = node.ChildNodes[1].ChildNodes[0].ChildNodes[0].Token.ValueString;
-                Lua.Ast.BinaryOp op;
+                Ast.BinaryOp op;
                 switch (opstring)
                 {
                     case ">":
@@ -94,23 +96,23 @@ namespace Lua
                 }
 
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParseAddOp(right);
+                Ast.IExpression rexpr = ParseAddOp(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
             }
             throw new Exception("Invalid RelOp node");
         }
 
-        Lua.Ast.IExpression ParseAddOp(ParseTreeNode node)
+        Ast.IExpression ParseAddOp(ParseTreeNode node)
         {
             if (node.Term.Name == "AddOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParseMulOp(left);
+                Ast.IExpression lexpr = ParseMulOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 string opstring = node.ChildNodes[1].ChildNodes[0].ChildNodes[0].Token.ValueString;
-                Lua.Ast.BinaryOp op;
+                Ast.BinaryOp op;
                 switch (opstring)
                 {
                     case "+":
@@ -122,23 +124,23 @@ namespace Lua
                 }
 
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParseMulOp(right);
+                Ast.IExpression rexpr = ParseMulOp(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
             }
             throw new Exception("Invalid AddOp node");
         }
 
-        Lua.Ast.IExpression ParseMulOp(ParseTreeNode node)
+        Ast.IExpression ParseMulOp(ParseTreeNode node)
         {
             if (node.Term.Name == "MulOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParsePowerOp(left);
+                Ast.IExpression lexpr = ParsePowerOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 string opstring = node.ChildNodes[1].ChildNodes[0].ChildNodes[0].Token.ValueString;
-                Lua.Ast.BinaryOp op;
+                Ast.BinaryOp op;
                 switch (opstring)
                 {
                     case "*":
@@ -152,38 +154,38 @@ namespace Lua
                 }
 
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParsePowerOp(right);
+                Ast.IExpression rexpr = ParsePowerOp(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
             }
             throw new Exception("Invalid MulOp node");
         }
 
-        Lua.Ast.IExpression ParsePowerOp(ParseTreeNode node)
+        Ast.IExpression ParsePowerOp(ParseTreeNode node)
         {
             if (node.Term.Name == "PowerOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Lua.Ast.IExpression lexpr = ParseExpression(left);
+                Ast.IExpression lexpr = ParseExpression(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
 
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Lua.Ast.IExpression rexpr = ParseExpression(right);
+                Ast.IExpression rexpr = ParseExpression(right);
 
-                return new Lua.Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Lua.Ast.BinaryOp.Power };
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = Ast.BinaryOp.Power };
             }
             throw new Exception("Invalid PowerOp node");
         }
         #endregion
 
         #region Statements
-        Lua.Ast.FunctionCall ParseFunctionCall(ParseTreeNode node)
+        Ast.FunctionCall ParseFunctionCall(ParseTreeNode node)
         {
             if (node.Term.Name == "FunctionCall")
             {
-                Lua.Ast.IExpression expr = ParsePrefix(node.ChildNodes[0]);
-                Lua.Ast.FunctionCall call = new Ast.FunctionCall();
+                Ast.IExpression expr = ParsePrefix(node.ChildNodes[0]);
+                Ast.FunctionCall call = new Ast.FunctionCall();
                 call.Arguments = new List<Ast.IExpression>();
                 call.Function = expr;
 
@@ -205,35 +207,35 @@ namespace Lua
             throw new Exception("Invalid FunctionCall node");
         }
 
-        Lua.Ast.Assignment ParseAssign(ParseTreeNode node)
+        Ast.Assignment ParseAssign(ParseTreeNode node)
         {
             if (node.Term.Name == "Assignment")
             {
-                Lua.Ast.IAssignable left = ParseVariable(node.ChildNodes[0]);
-                Lua.Ast.IExpression right = ParseExpression(node.ChildNodes[1]);
+                Ast.IAssignable left = ParseVariable(node.ChildNodes[0]);
+                Ast.IExpression right = ParseExpression(node.ChildNodes[1]);
 
-                return new Lua.Ast.Assignment() { Expression = right, Variable = left };
+                return new Ast.Assignment() { Expression = right, Variable = left };
             }
             throw new Exception("Invalid Assignment node");
         }
 
-        Lua.Ast.LocalAssignment ParseLocalAssign(ParseTreeNode node)
+        Ast.LocalAssignment ParseLocalAssign(ParseTreeNode node)
         {
             if (node.Term.Name == "LocalAssignment")
             {
-                Lua.Ast.IAssignable left = ParseVariable(node.ChildNodes[1]);
-                Lua.Ast.IExpression right;
+                string left = node.ChildNodes[1].Token.ValueString;
+                Ast.IExpression right;
                 if (node.ChildNodes[2].ChildNodes.Count == 0)
-                    right = new Lua.Ast.NilLiteral();
+                    right = new Ast.NilLiteral();
                 else
                     right = ParseExpression(node.ChildNodes[2].ChildNodes[0]);
 
-                return new Lua.Ast.LocalAssignment() { Expression = right, Variable = left };
+                return new Ast.LocalAssignment() { Value = right, Name = left };
             }
             throw new Exception("Invalid LocalAssignment node");
         }
 
-        Lua.Ast.Return ParseReturnStat(ParseTreeNode node)
+        Ast.Return ParseReturnStat(ParseTreeNode node)
         {
             if (node.Term.Name == "ReturnStat")
             {
@@ -242,7 +244,7 @@ namespace Lua
             throw new Exception("Invalid ReturnStat node");
         }
 
-        Lua.Ast.Block ParseDoBlock(ParseTreeNode node)
+        Ast.Block ParseDoBlock(ParseTreeNode node)
         {
             if (node.Term.Name == "DoBlock")
             {
@@ -251,12 +253,12 @@ namespace Lua
             throw new Exception("Invalid DoBlock node");
         }
 
-        Lua.Ast.Repeat ParseRepeat(ParseTreeNode node)
+        Ast.Repeat ParseRepeat(ParseTreeNode node)
         {
             if (node.Term.Name == "Repeat")
             {
-                Lua.Ast.Block block = ParseBlock(node.ChildNodes[1]);
-                Lua.Ast.IExpression condition = ParseExpression(node.ChildNodes[3]);
+                Ast.Block block = ParseBlock(node.ChildNodes[1]);
+                Ast.IExpression condition = ParseExpression(node.ChildNodes[3]);
 
                 return new Ast.Repeat()
                 {
@@ -267,11 +269,11 @@ namespace Lua
             throw new Exception("Invalid Repeat node");
         }
 
-        Lua.Ast.While ParseWhile(ParseTreeNode node)
+        Ast.While ParseWhile(ParseTreeNode node)
         {
             if (node.Term.Name == "While")
             {
-                return new Lua.Ast.While()
+                return new Ast.While()
                 {
                     Condition = ParseExpression(node.ChildNodes[1]),
                     Block = ParseDoBlock(node.ChildNodes[2])
@@ -280,14 +282,14 @@ namespace Lua
             throw new Exception("Invalid While node");
         }
 
-        Lua.Ast.If ParseIf(ParseTreeNode node)
+        Ast.If ParseIf(ParseTreeNode node)
         {
             if (node.Term.Name == "If")
             {
-                Lua.Ast.IExpression condition = ParseExpression(node.ChildNodes[1]);
-                Lua.Ast.Block block = ParseBlock(node.ChildNodes[3]);
+                Ast.IExpression condition = ParseExpression(node.ChildNodes[1]);
+                Ast.Block block = ParseBlock(node.ChildNodes[3]);
 
-                Lua.Ast.If If = new Ast.If();
+                Ast.If If = new Ast.If();
                 If.Block = block;
                 If.Condition = condition;
                 If.ElseIfs = new List<Ast.If>();
@@ -298,7 +300,7 @@ namespace Lua
                 while (ElseifNode.ChildNodes.Count != 0)
                 {
                     var childnode = ElseifNode.ChildNodes[0];
-                    Lua.Ast.If elseif = new Ast.If();
+                    Ast.If elseif = new Ast.If();
                     elseif.Condition = ParseExpression(childnode.ChildNodes[1]);
                     elseif.Block = ParseBlock(childnode.ChildNodes[3]);
 
@@ -309,7 +311,7 @@ namespace Lua
 
                 if (ElseNode.ChildNodes.Count != 0)
                 {
-                    If.ElseBlock = ParseBlock(ElseNode.ChildNodes[0]);
+                    If.ElseBlock = ParseBlock(ElseNode.ChildNodes[0].ChildNodes[1]);
                 }
 
                 return If;
@@ -317,27 +319,47 @@ namespace Lua
             throw new Exception("Invalid If node");
         }
 
-        Lua.Ast.Assignment ParseFunctionDecl(ParseTreeNode node)
+        Ast.Assignment ParseFunctionDecl(ParseTreeNode node)
         {
             if (node.Term.Name == "FunctionDecl")
             {
-                Lua.Ast.IAssignable expr = ParseVariable(node.ChildNodes[1]);
+                Ast.IAssignable expr = ParseVariable(node.ChildNodes[1]);
+                ParseTreeNode argsNode = node.ChildNodes[2].ChildNodes[0];
+                ParseTreeNode chunkNode = node.ChildNodes[3];
+
+                Ast.Block block = ParseBlock(chunkNode);
+                Ast.FunctionDefinition def = new Ast.FunctionDefinition();
+                def.Body = block;
+                def.Arguments = new List<Ast.Argument>();
+                if (argsNode.ChildNodes.Count > 0)
+                {
+                    argsNode = argsNode.ChildNodes[0];
+                    while (argsNode.ChildNodes.Count > 0)
+                    {
+                        string ident = argsNode.ChildNodes[0].Token.ValueString;
+                        def.Arguments.Add(new Ast.Argument() { Name = ident });
+                        if (argsNode.ChildNodes.Count == 1)
+                            break;
+                        argsNode = argsNode.ChildNodes[1];
+                    }
+                }
+                return new Ast.Assignment() { Expression = def, Variable = expr };
             }
             throw new Exception("Invalid FunctionDecl node");
         }
         #endregion
 
         #region Expressions
-        Lua.Ast.UnaryExpression ParseUnaryExpr(ParseTreeNode node)
+        Ast.UnaryExpression ParseUnaryExpr(ParseTreeNode node)
         {
             if (node.Term.Name == "UnaryExpr")
             {
-                Lua.Ast.IExpression expr = ParseExpression(node.ChildNodes[1]);
+                Ast.IExpression expr = ParseExpression(node.ChildNodes[1]);
                 var opNode = node.ChildNodes[0].ChildNodes[0];
-                Lua.Ast.UnaryOp op = Ast.UnaryOp.Invert;
-                switch (node.Token.ValueString)
+                Ast.UnaryOp op = Ast.UnaryOp.Invert;
+                switch (opNode.Token.ValueString)
                 {
-                    case "!":
+                    case "not":
                         op = Ast.UnaryOp.Negate; break;
                     case "-":
                         op = Ast.UnaryOp.Invert; break;
@@ -353,15 +375,15 @@ namespace Lua
             throw new Exception("Invalid UnaryExpr node");
         }
 
-        Lua.Ast.FunctionDefinition ParseFunctionDef(ParseTreeNode node)
+        Ast.FunctionDefinition ParseFunctionDef(ParseTreeNode node)
         {
             if (node.Term.Name == "FunctionDef")
             {
                 ParseTreeNode argsNode = node.ChildNodes[1].ChildNodes[0];
                 ParseTreeNode chunkNode = node.ChildNodes[2];
 
-                Lua.Ast.Block block = ParseBlock(chunkNode);
-                Lua.Ast.FunctionDefinition def = new Ast.FunctionDefinition();
+                Ast.Block block = ParseBlock(chunkNode);
+                Ast.FunctionDefinition def = new Ast.FunctionDefinition();
                 def.Body = block;
                 def.Arguments = new List<Ast.Argument>();
 
@@ -384,7 +406,7 @@ namespace Lua
             throw new Exception("Invalid FunctionDef node");
         }
 
-        Lua.Ast.IExpression ParsePrefix(ParseTreeNode node)
+        Ast.IExpression ParsePrefix(ParseTreeNode node)
         {
             if (node.Term != null)
             {
@@ -408,55 +430,108 @@ namespace Lua
             throw new Exception("Invalid Prefix node");
         }
 
-        Lua.Ast.IAssignable ParseVariable(ParseTreeNode node)
+        Ast.IAssignable ParseVariable(ParseTreeNode node)
         {
             if (node.Term != null)
             {
                 if (node.ChildNodes.Count == 1)
                 {
                     string name = node.ChildNodes[0].Token.ValueString;
-                    return new Lua.Ast.Variable() { Name = name };
+                    return new Ast.Variable() { Name = name };
                 }
                 else
                 {
-                    Lua.Ast.IExpression prefix = ParsePrefix(node.ChildNodes[0]);
+                    Ast.IExpression prefix = ParsePrefix(node.ChildNodes[0]);
                     if (node.ChildNodes[1].Term.Name == "Expression")
                     {
-                        Lua.Ast.IExpression index = ParseExpression(node.ChildNodes[1]);
-                        return new Lua.Ast.TableAccess() { Expression = prefix, Index = index };
+                        Ast.IExpression index = ParseExpression(node.ChildNodes[1]);
+                        return new Ast.TableAccess() { Expression = prefix, Index = index };
                     }
                     else
                     {
                         string name = node.ChildNodes[1].Token.ValueString;
-                        return new Lua.Ast.Variable() { Name = name, Prefix = prefix };
+                        return new Ast.Variable() { Name = name, Prefix = prefix };
                     }
                 }
             }
             throw new Exception("Invalid Variable node");
         }
 
-        Lua.Ast.IExpression ParseExpression(ParseTreeNode node)
+        Ast.TableConstructor ParseTableConstruct(ParseTreeNode node)
+        {
+            if (node.Term.Name == "TableConstruct")
+            {
+                if (node.ChildNodes.Count == 0)
+                {
+                    return new Ast.TableConstructor() { Values = new Dictionary<Ast.IExpression, Ast.IExpression>() };
+                }
+                else
+                {
+                    var child = node.ChildNodes[0];
+                    Ast.TableConstructor t = new Ast.TableConstructor();
+                    t.Values = new Dictionary<Ast.IExpression, Ast.IExpression>();
+                    int i = 1;
+                    if (child.ChildNodes.Count > 0)
+                    {
+                        while (true)
+                        {
+                            ParseTreeNode indexNode = child.ChildNodes[0];
+                            ParseTreeNode valueNode = child.ChildNodes[1];
+                            ParseTreeNode nextNode = child.ChildNodes[2];
+
+                            Ast.IExpression index;
+                            if (indexNode.ChildNodes.Count == 0)
+                            {
+                                index = new Ast.NumberLiteral() { Value = i };
+                                i++;
+                            }
+                            else if (indexNode.ChildNodes[0].Term.Name == "identifier")
+                            {
+                                index = new Ast.StringLiteral() { Value = indexNode.ChildNodes[0].Token.ValueString };
+                            }
+                            else
+                            {
+                                index = ParseExpression(indexNode.ChildNodes[0]);
+                            }
+
+                            Ast.IExpression value = ParseExpression(valueNode);
+                            t.Values.Add(index, value);
+
+                            child = nextNode;
+                            if (child.ChildNodes.Count == 0)
+                                break;
+                            else
+                                child = child.ChildNodes[0];
+                        }
+                    }
+                    return t;
+                }
+            }
+            throw new Exception("Invalid TableConstruct node");
+        }
+
+        Ast.IExpression ParseExpression(ParseTreeNode node)
         {
             if (node.Term.Name == "Expression")
             {
                 ParseTreeNode child = node.ChildNodes[0];
                 if (child.Token != null && child.Token.Terminal is NumberLiteral)
                 {
-                    return new Lua.Ast.NumberLiteral() { Value = (child.Token.Value is double ? (double)(child.Token.Value) : (int)(child.Token.Value)) };
+                    return new Ast.NumberLiteral() { Value = (child.Token.Value is double ? (double)(child.Token.Value) : (int)(child.Token.Value)) };
                 }
                 else if (child.Token != null && child.Token.Terminal is StringLiteral)
                 {
-                    return new Lua.Ast.StringLiteral() { Value = (string)(child.Token.Value) };
+                    return new Ast.StringLiteral() { Value = (string)(child.Token.Value) };
                 }
                 else if (child.Token != null && child.Token.Terminal is KeyTerm)
                 {
                     string val = child.Token.ValueString;
                     if (val == "true")
-                        return new Lua.Ast.BoolLiteral() { Value = true };
+                        return new Ast.BoolLiteral() { Value = true };
                     else if (val == "false")
-                        return new Lua.Ast.BoolLiteral() { Value = false };
+                        return new Ast.BoolLiteral() { Value = false };
                     else if (val == "nil")
-                        return new Lua.Ast.NilLiteral();
+                        return new Ast.NilLiteral();
                 }
                 else if (child.Term != null && child.Term.Name == "Prefix")
                 {
@@ -474,14 +549,18 @@ namespace Lua
                 {
                     return ParseUnaryExpr(child);
                 }
+                else if (child.Term != null && child.Term.Name == "TableConstruct")
+                {
+                    return ParseTableConstruct(child);
+                }
             }
             throw new Exception("Invalid Expression node");
         }
         #endregion
 
-        Lua.Ast.Block ParseBlock(ParseTreeNode node)
+        Ast.Block ParseBlock(ParseTreeNode node)
         {
-            Lua.Ast.Block block = new Ast.Block();
+            Ast.Block block = new Ast.Block();
             block.Statements = new List<Ast.IStatement>();
             foreach (ParseTreeNode child in node.ChildNodes)
             {
@@ -503,21 +582,13 @@ namespace Lua
                         block.Statements.Add(ParseWhile(child)); break;
                     case "Repeat":
                         block.Statements.Add(ParseRepeat(child)); break;
+                    case "FunctionDecl":
+                        block.Statements.Add(ParseFunctionDecl(child)); break;
                     default:
                         throw new NotImplementedException("Node not yet implemented");
                 }
             }
             return block;
-        }
-
-        public static void dispTree(ParseTreeNode node, int level)
-        {
-            for (int i = 0; i < level; i++)
-                Console.Write(" ");
-            Console.WriteLine(node);
-
-            foreach (ParseTreeNode child in node.ChildNodes)
-                dispTree(child, level + 1);
         }
     }
 
@@ -573,8 +644,11 @@ namespace Lua
             NonTerminal OrOp = new NonTerminal("OrOp");
             NonTerminal UnaryExpr = new NonTerminal("UnaryExpr");
 
+            NonTerminal TableConstruct = new NonTerminal("TableConstruct");
+            NonTerminal TableConstructFragment = new NonTerminal("TableConstructFragment");
             #endregion
 
+            #region Fragments
             CallArgumentsFragment.Rule = Expression | Expression + "," + CallArgumentsFragment;
 
             CallArguments.Rule = "(" + (CallArgumentsFragment | Empty) + ")";
@@ -584,6 +658,7 @@ namespace Lua
             DefArguments.Rule = "(" + (DefArgumentsFragment | Empty) + ")";
 
             Chunk.Rule = MakeStarRule(Chunk, Statement);
+            #endregion
 
             #region Expressions
             PowerOp.Rule = Expression + ("^" + Expression | Empty);
@@ -593,7 +668,7 @@ namespace Lua
             AndOp.Rule = RelOp + ("and" + RelOp | Empty);
             OrOp.Rule = AndOp + ("or" + AndOp | Empty);
 
-            UnaryExpr.Rule = (ToTerm("!") | "-" | "#") + Expression;
+            UnaryExpr.Rule = (ToTerm("not") | "-" | "#") + Expression;
 
             Prefix.Rule =
                 "(" + Expression + ")"
@@ -611,6 +686,9 @@ namespace Lua
                 ToTerm("function") + DefArguments
                 + Chunk + ToTerm("end");
 
+            TableConstructFragment.Rule = ((ToTerm("[") + Expression + "]" + "=" | Identifier + "=" | Empty) + Expression) + ("," + TableConstructFragment | Empty) | Empty;
+            TableConstruct.Rule = "{" + TableConstructFragment + "}";
+
             Expression.Rule =
                 OrOp
                 | UnaryExpr
@@ -621,7 +699,8 @@ namespace Lua
                 | DoubleString
                 | Number
                 | Prefix
-                | FunctionDef;
+                | FunctionDef
+                | TableConstruct;
             #endregion
 
             #region Statements
@@ -633,7 +712,7 @@ namespace Lua
             Assignment.Rule =
                 Variable + "=" + Expression;
 
-            LocalAssignment.Rule = "local" + Variable + ("=" + Expression | Empty);
+            LocalAssignment.Rule = "local" + Identifier + ("=" + Expression | Empty);
 
             Elseif.Rule = "elseif" + Expression + "then" + Chunk + (Elseif | Empty);
             Else.Rule = "else" + Chunk;
@@ -666,7 +745,7 @@ namespace Lua
                 "if", "for", "repeat", "until",
                 "end", "do", "return");
 
-            this.MarkPunctuation(".", ",", ";", "(", ")", "[", "]", "=");
+            this.MarkPunctuation(".", ",", ";", "(", ")", "[", "]", "{", "}", "=");
             this.MarkTransient(Statement);
         }
     }

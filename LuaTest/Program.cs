@@ -12,7 +12,7 @@ namespace LuaTest
     {
         static LuaObject print(params LuaObject[] args)
         {
-            Console.WriteLine(String.Join("\t", args));
+            Console.WriteLine(String.Join("\t", Array.ConvertAll<LuaObject, string>(args, x=>x.ToString())));
             return LuaObject.Nil;
         }
 
@@ -23,9 +23,14 @@ namespace LuaTest
 
         static void Main(string[] args)
         {
+            Lua.Lua lua = new Lua.Lua();
+            lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
+            lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
+
+            lua.DoFile("C:\\Users\\Francesco\\test.lua");
             while (true)
             {
-                new Parser(Console.ReadLine());
+                lua.DoString(Console.ReadLine());
             }
         }
     }

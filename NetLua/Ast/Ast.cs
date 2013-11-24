@@ -1,14 +1,4 @@
-﻿/*
- * NetLua by Francesco Bertolaccini
- * Project inspired by AluminumLua, a project by Alexander Corrado
- * (See his repo at http://github.com/chkn/AluminumLua)
- * 
- * NetLua - a managed implementation of the Lua dynamic programming language
- * 
- * Ast.cs
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -112,6 +102,11 @@ namespace Lua.Ast
         public UnaryOp Operation;
     }
 
+    public class TableConstructor : IExpression
+    {
+        public IDictionary<IExpression, IExpression> Values;
+    }
+
     public class Assignment : IStatement
     {
         // Var1, Var2, Var3 = Exp1, Exp2, Exp3
@@ -127,8 +122,11 @@ namespace Lua.Ast
         public IExpression Expression;
     }
 
-    public class LocalAssignment : Assignment
-    { }
+    public class LocalAssignment : IStatement
+    {
+        public string Name;
+        public IExpression Value;
+    }
 
     public class Block : IStatement
     {
