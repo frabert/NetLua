@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Lua.Ast;
+using NetLua.Ast;
 
-namespace Lua
+namespace NetLua
 {
     public static class LuaInterpreter
     {
@@ -34,7 +34,7 @@ namespace Lua
                 case BinaryOp.LessThan:
                     return left.AsNumber() < right.AsNumber();
                 case BinaryOp.Modulo:
-                        return left % right;
+                    return left % right;
                 case BinaryOp.Multiplication:
                     return left * right;
                 case BinaryOp.Or:
@@ -221,6 +221,22 @@ namespace Lua
             return obj;
         }
 
+        static LuaObject EvalWhile(While stat, LuaContext Context, out bool returned)
+        {
+            returned = false;
+            LuaObject cond = EvalExpression(stat.Condition, Context);
+            while (cond.AsBool())
+            {
+                LuaContext ctx = new LuaContext(Context);
+                LuaObject obj = EvalBlock(stat.Block, ctx, out returned);
+                if (returned)
+                    return obj;
+                else
+                    cond = EvalExpression(stat.Condition, Context);
+            }
+            return LuaObject.Nil;
+        }
+
         static void SetAssignable(IAssignable Expression, LuaObject Value, LuaContext Context)
         {
             if (Expression is Variable)
@@ -249,6 +265,7 @@ namespace Lua
         public static LuaObject EvalBlock(Block Block, LuaContext Context, out bool returned)
         {
             returned = false;
+            LuaObject obj = LuaObject.Nil;
             foreach (IStatement stat in Block.Statements)
             {
                 if (stat is Assignment)
@@ -276,23 +293,21 @@ namespace Lua
                 {
                     Block block = stat as Block;
                     LuaContext ctx = new LuaContext(Context);
-                    bool ret = false;
-                    LuaObject val = EvalBlock(block, ctx, out ret);
-                    if (ret)
-                    {
-                        returned = true;
-                        return val;
-                    }
+                    obj = EvalBlock(block, ctx, out returned);
+                    if (returned)
+                        return obj;
                 }
                 else if (stat is If)
                 {
-                    bool ret;
-                    LuaObject obj = EvalIf(stat as If, Context, out ret);
-                    if (ret)
-                    {
-                        returned = true;
+                    obj = EvalIf(stat as If, Context, out returned);
+                    if (returned)
                         return obj;
-                    }
+                }
+                else if (stat is While)
+                {
+                    obj = EvalWhile(stat as While, Context, out returned);
+                    if (returned)
+                        return obj;
                 }
                 else
                 {
@@ -300,7 +315,7 @@ namespace Lua
                 }
             }
 
-            return LuaObject.Nil;
+            return obj;
         }
     }
 }

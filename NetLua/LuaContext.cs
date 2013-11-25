@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Lua
+namespace NetLua
 {
     public class LuaContext
     {
@@ -59,9 +59,13 @@ namespace Lua
         public void Set(string Name, LuaObject Value)
         {
             if (parent == null || variables.ContainsKey(Name))
+            {
                 SetLocal(Name, Value);
+            }
             else
-                SetGlobal(Name, Value);
+            {
+                parent.Set(Name, Value);
+            }
         }
     }
 }

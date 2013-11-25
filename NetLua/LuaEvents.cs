@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Lua
+namespace NetLua
 {
     static class LuaEvents
     {
         public static LuaObject rawget(LuaObject table, LuaObject index)
         {
-            if(table.IsTable)
+            if (table.IsTable)
             {
                 LuaObject obj;
-                if(table.AsTable().TryGetValue(index, out obj))
+                if (table.AsTable().TryGetValue(index, out obj))
                 {
                     return obj;
                 }
-                else 
+                else
                 {
                     return LuaObject.Nil;
                 }
@@ -45,11 +45,8 @@ namespace Lua
 
         static LuaObject getBinhandler(LuaObject a, LuaObject b, string f)
         {
-            LuaObject f1 = LuaObject.Nil, f2 = LuaObject.Nil;
-            if (!a.Metatable.IsNil)
-                f1 = a.Metatable[f];
-            if (!b.Metatable.IsNil)
-                f2 = b.Metatable[f];
+            LuaObject f1 = getMetamethod(a, f);
+            LuaObject f2 = getMetamethod(b, f);
 
             if (f1.IsNil)
                 return f2;
@@ -73,6 +70,14 @@ namespace Lua
             {
                 return LuaObject.Nil;
             }
+        }
+
+        static LuaObject getMetamethod(LuaObject obj, string e)
+        {
+            if (obj.Metatable == null || obj.Metatable.IsNil)
+                return LuaObject.Nil;
+            else
+                return obj.Metatable[e];
         }
 
         internal static LuaObject add_event(LuaObject op1, LuaObject op2)
@@ -187,7 +192,7 @@ namespace Lua
 
             if (!a.IsNil && !b.IsNil)
             {
-                return LuaObject.FromNumber(Math.Pow(a.AsNumber() , b.AsNumber()));
+                return LuaObject.FromNumber(Math.Pow(a.AsNumber(), b.AsNumber()));
             }
             else
             {
@@ -212,7 +217,7 @@ namespace Lua
             }
             else
             {
-                LuaObject handler = op.Metatable["__unm"];
+                LuaObject handler = getMetamethod(op, "__unm");
                 if (!handler.IsNil)
                 {
                     return handler.Call(op);
@@ -233,14 +238,14 @@ namespace Lua
                     return v;
                 else
                 {
-                    handler = table.Metatable["__index"];
-                    if (handler.IsNil || handler == null)
+                    handler = getMetamethod(table, "__index");
+                    if (handler.IsNil)
                         return LuaObject.Nil;
                 }
             }
             else
             {
-                handler = table.Metatable["__index"];
+                handler = getMetamethod(table, "__index");
                 if (!handler.IsNil)
                     return handler.Call(table, key);
                 else
@@ -272,7 +277,7 @@ namespace Lua
                     rawset(table, key, value);
                     return LuaObject.Nil;
                 }
-                handler = table.Metatable["__newindex"];
+                handler = getMetamethod(table, "__newindex");
                 if (handler.IsNil)
                 {
                     rawset(table, key, value);
@@ -281,7 +286,7 @@ namespace Lua
             }
             else
             {
-                handler = table.Metatable["__newindex"];
+                handler = getMetamethod(table, "__newindex");
                 if (handler.IsNil)
                     throw new LuaException("Invalid op");
             }
@@ -305,7 +310,7 @@ namespace Lua
             }
             else
             {
-                LuaObject handler = func.Metatable["__call"];
+                LuaObject handler = getMetamethod(func, "__call");
                 if (handler.IsFunction)
                 {
                     List<LuaObject> argslist = new List<LuaObject>();

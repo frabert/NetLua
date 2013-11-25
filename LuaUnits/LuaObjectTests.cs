@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Lua;
+using NetLua;
 using NUnit.Framework;
 
 namespace LuaUnits

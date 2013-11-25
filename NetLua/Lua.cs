@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Lua.Ast;
+using NetLua.Ast;
 
-namespace Lua
+namespace NetLua
 {
     public class Lua
     {

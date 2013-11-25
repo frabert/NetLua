@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Lua;
-using Lua.Ast;
+using NetLua;
+using NetLua.Ast;
 
 namespace LuaTest
 {
@@ -34,14 +34,12 @@ namespace LuaTest
 
         static void Main(string[] args)
         {
-            Lua.Lua lua = new Lua.Lua();
+            Lua lua = new Lua();
             lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
             lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
             lua.Context.SetGlobal("getmetatable", LuaObject.FromFunction(getmetatable));
             lua.Context.SetGlobal("setmetatable", LuaObject.FromFunction(setmetatable));
 
-
-            lua.DoFile("C:\\Users\\Francesco\\test.lua");
             while (true)
             {
                 lua.DoString(Console.ReadLine());

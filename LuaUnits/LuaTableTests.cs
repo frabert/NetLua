@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Lua;
+using NetLua;
 using NUnit.Framework;
 
 namespace LuaUnits
@@ -13,7 +13,7 @@ namespace LuaUnits
         [Test]
         public static void FirstTableTest()
         {
-            Lua.Lua lua = new Lua.Lua();
+            NetLua.Lua lua = new NetLua.Lua();
             lua.DoString(
 @" a={}
 k = 'x'
@@ -32,7 +32,7 @@ a[20] = 'great'");
         [Test]
         public static void SecondTableTest()
         {
-            Lua.Lua lua = new Lua.Lua();
+            NetLua.Lua lua = new NetLua.Lua();
             lua.DoString(
 @" a={}
 a['x'] = 10        

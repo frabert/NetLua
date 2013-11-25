@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Lua
+namespace NetLua
 {
     using LuaTable = IDictionary<LuaObject, LuaObject>;
     using LuaTableImpl = Dictionary<LuaObject, LuaObject>;
@@ -82,7 +82,7 @@ namespace Lua
         /// <summary>
         /// An empty/unset value
         /// </summary>
-        public static readonly LuaObject Nil = new LuaObject() { luaobj = null, type = LuaType.nil, Metatable = Nil };
+        public static readonly LuaObject Nil = new LuaObject() { luaobj = null, type = LuaType.nil };
 
         /// <summary>
         /// A standard true boolean value
@@ -97,7 +97,7 @@ namespace Lua
         /// <summary>
         /// Zero (number)
         /// </summary>
-        public static readonly LuaObject Zero = new LuaObject { luaobj = 0d, type = LuaType.number, Metatable =  Nil };
+        public static readonly LuaObject Zero = new LuaObject { luaobj = 0d, type = LuaType.number, Metatable = Nil };
 
         /// <summary>
         /// And empty string
@@ -238,7 +238,7 @@ namespace Lua
         /// Gets whether this is a number object
         /// </summary>
         public bool IsNumber { get { return type == LuaType.number; } }
-        
+
         /// <summary>
         /// Converts this object into a number
         /// </summary>
@@ -330,7 +330,7 @@ namespace Lua
 
             return new LuaObject { luaobj = table, type = LuaType.table, Metatable = Nil };
         }
-        
+
         /// <summary>
         /// Creates and initializes a Lua object with a table value
         /// </summary>

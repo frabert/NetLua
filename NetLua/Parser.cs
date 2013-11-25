@@ -6,7 +6,7 @@ using System.Text;
 using Irony.Parsing;
 using Irony.Ast;
 
-namespace Lua
+namespace NetLua
 {
     public class Parser
     {
