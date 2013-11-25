@@ -14,7 +14,7 @@ namespace Lua
             switch (Expression.Operation)
             {
                 case BinaryOp.Addition:
-                    return left.AsNumber() + right.AsNumber();
+                    return left + right;
                 case BinaryOp.And:
                     return left.AsBool() && right.AsBool();
                 case BinaryOp.Concat:
@@ -22,7 +22,7 @@ namespace Lua
                 case BinaryOp.Different:
                     return !(left.Equals(right));
                 case BinaryOp.Division:
-                    return left.AsNumber() / right.AsNumber();
+                    return left / right;
                 case BinaryOp.Equal:
                     return left.Equals(right);
                 case BinaryOp.GreaterOrEqual:
@@ -34,18 +34,15 @@ namespace Lua
                 case BinaryOp.LessThan:
                     return left.AsNumber() < right.AsNumber();
                 case BinaryOp.Modulo:
-                    {
-                        double o1 = left.AsNumber(), o2 = right.AsNumber();
-                        return o1 - Math.Floor(o1 / o2) * o2;
-                    }
+                        return left % right;
                 case BinaryOp.Multiplication:
-                    return left.AsNumber() * right.AsNumber();
+                    return left * right;
                 case BinaryOp.Or:
                     return left.AsBool() || right.AsBool();
                 case BinaryOp.Power:
-                    return Math.Pow(left.AsNumber(), right.AsNumber());
+                    return left ^ right;
                 case BinaryOp.Subtraction:
-                    return left.AsNumber() - right.AsNumber();
+                    return left - right;
                 default:
                     throw new NotImplementedException();
             }
@@ -93,9 +90,10 @@ namespace Lua
             if (Expression.Arguments != null || Expression.Arguments.Count != 0)
             {
                 args = Array.ConvertAll<IExpression, LuaObject>(Expression.Arguments.ToArray(),
-                    x => (LuaObject)(EvalExpression(x, Context).Clone()));
+                    x => EvalExpression(x, Context));
             }
-            return func.AsFunction()(args);
+            //return func.AsFunction()(args);
+            return func.Call(args);
         }
 
         static LuaObject EvalTableAccess(TableAccess Expression, LuaContext Context)

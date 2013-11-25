@@ -51,6 +51,7 @@
     <Compile Include="LuaContext.cs" />
     <Compile Include="LuaInterpreter.cs" />
     <Compile Include="LuaObject.cs" />
+    <Compile Include="LuaEvents.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

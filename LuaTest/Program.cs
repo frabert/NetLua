@@ -21,11 +21,25 @@ namespace LuaTest
             return Console.ReadLine();
         }
 
+        static LuaObject getmetatable(params LuaObject[] args)
+        {
+            return args[0].Metatable;
+        }
+
+        static LuaObject setmetatable(params LuaObject[] args)
+        {
+            args[0].Metatable = args[1];
+            return LuaObject.Nil;
+        }
+
         static void Main(string[] args)
         {
             Lua.Lua lua = new Lua.Lua();
             lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
             lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
+            lua.Context.SetGlobal("getmetatable", LuaObject.FromFunction(getmetatable));
+            lua.Context.SetGlobal("setmetatable", LuaObject.FromFunction(setmetatable));
+
 
             lua.DoFile("C:\\Users\\Francesco\\test.lua");
             while (true)

@@ -55,36 +55,54 @@ namespace Lua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>>, IEquatable<LuaObject>, ICloneable
+    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>>, IEquatable<LuaObject>
     {
         private object luaobj;
         private LuaType type;
+        private LuaObject metatable = Nil;
+
+        public LuaObject()
+        {
+            this.metatable = Nil;
+        }
+
+        public LuaObject Metatable
+        {
+            get
+            {
+                return metatable;
+            }
+            set
+            {
+                metatable = value;
+            }
+        }
 
         #region Common objects
         /// <summary>
         /// An empty/unset value
         /// </summary>
-        public static readonly LuaObject Nil = new LuaObject();
+        public static readonly LuaObject Nil = new LuaObject() { luaobj = null, type = LuaType.nil, Metatable = Nil };
 
         /// <summary>
         /// A standard true boolean value
         /// </summary>
-        public static readonly LuaObject True = new LuaObject { luaobj = true, type = LuaType.boolean };
+        public static readonly LuaObject True = new LuaObject { luaobj = true, type = LuaType.boolean, Metatable = Nil };
 
         /// <summary>
         /// A standard false boolean value
         /// </summary>
-        public static readonly LuaObject False = new LuaObject { luaobj = false, type = LuaType.boolean };
+        public static readonly LuaObject False = new LuaObject { luaobj = false, type = LuaType.boolean, Metatable = Nil };
 
         /// <summary>
         /// Zero (number)
         /// </summary>
-        public static readonly LuaObject Zero = new LuaObject { luaobj = 0d, type = LuaType.number };
+        public static readonly LuaObject Zero = new LuaObject { luaobj = 0d, type = LuaType.number, Metatable =  Nil };
 
         /// <summary>
         /// And empty string
         /// </summary>
-        public static readonly LuaObject EmptyString = new LuaObject { luaobj = "", type = LuaType.@string };
+        public static readonly LuaObject EmptyString = new LuaObject { luaobj = "", type = LuaType.@string, Metatable = Nil };
         #endregion
 
         /// <summary>
@@ -208,7 +226,7 @@ namespace Lua
             if (number == 0d)
                 return Zero;
 
-            return new LuaObject { luaobj = number, type = LuaType.number };
+            return new LuaObject { luaobj = number, type = LuaType.number, Metatable = Nil };
         }
 
         public static implicit operator LuaObject(double number)
@@ -226,7 +244,7 @@ namespace Lua
         /// </summary>
         public double AsNumber()
         {
-            return (luaobj != null ? (double)luaobj : 0);
+            return (double)luaobj;
         }
         #endregion
 
@@ -242,7 +260,7 @@ namespace Lua
             if (str.Length == 0)
                 return EmptyString;
 
-            return new LuaObject { luaobj = str, type = LuaType.@string };
+            return new LuaObject { luaobj = str, type = LuaType.@string, Metatable = Nil };
         }
 
         public static implicit operator LuaObject(string str)
@@ -267,7 +285,7 @@ namespace Lua
             if (fn == null)
                 return Nil;
 
-            return new LuaObject { luaobj = fn, type = LuaType.function };
+            return new LuaObject { luaobj = fn, type = LuaType.function, Metatable = Nil };
         }
 
         /// <summary>
@@ -310,7 +328,7 @@ namespace Lua
             if (table == null)
                 return Nil;
 
-            return new LuaObject { luaobj = table, type = LuaType.table };
+            return new LuaObject { luaobj = table, type = LuaType.table, Metatable = Nil };
         }
         
         /// <summary>
@@ -361,6 +379,36 @@ namespace Lua
             return luaobj;
         }
 
+        public static LuaObject operator +(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.add_event(a, b);
+        }
+
+        public static LuaObject operator -(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.sub_event(a, b);
+        }
+
+        public static LuaObject operator *(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.mul_event(a, b);
+        }
+
+        public static LuaObject operator /(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.div_event(a, b);
+        }
+
+        public static LuaObject operator %(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.mod_event(a, b);
+        }
+
+        public static LuaObject operator ^(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.pow_event(a, b);
+        }
+
         public IEnumerator<KeyValuePair<LuaObject, LuaObject>> GetEnumerator()
         {
             var table = luaobj as IEnumerable<KeyValuePair<LuaObject, LuaObject>>;
@@ -379,22 +427,40 @@ namespace Lua
         {
             get
             {
-                var table = AsTable();
-                if (table == null)
-                    throw new LuaException("cannot index non-table");
-
-                // we don't care whether the get was successful, because the default LuaObject is nil.
-                LuaObject result;
-                table.TryGetValue(key, out result);
-                return (result == null ? LuaObject.Nil : result);
+                if (IsTable)
+                {
+                    LuaTable table = AsTable();
+                    if (table.ContainsKey(key))
+                        return table[key];
+                    else
+                    {
+                        return LuaEvents.index_event(this, key);
+                    }
+                }
+                else
+                {
+                    return LuaEvents.index_event(this, key);
+                }
             }
             set
             {
-                var table = AsTable();
+                /*var table = AsTable();
                 if (table == null)
                     throw new LuaException("cannot index non-table");
 
-                table[key] = value;
+                table[key] = value;*/
+                if (IsTable)
+                {
+                    var table = AsTable();
+                    if (table.ContainsKey(key))
+                        table[key] = value;
+                    else
+                        LuaEvents.newindex_event(this, key, value);
+                }
+                else
+                {
+                    LuaEvents.newindex_event(this, key, value);
+                }
             }
         }
 
@@ -427,7 +493,7 @@ namespace Lua
         {
             if (obj is LuaObject)
                 return Equals((LuaObject)obj);
-            // FIXME: It would be nice to automatically compare other types (strings, ints, doubles, etc.) to LuaObjects.
+            // TODO: It would be nice to automatically compare other types (strings, ints, doubles, etc.) to LuaObjects.
             return false;
         }
 
@@ -439,13 +505,9 @@ namespace Lua
             }
         }
 
-        public object Clone()
+        public LuaObject Call(params LuaObject[] args)
         {
-            LuaObject obj = new LuaObject();
-            obj.type = this.type;
-            obj.luaobj = this.luaobj;
-
-            return obj;
+            return LuaEvents.call_event(this, args);
         }
     }
 }
