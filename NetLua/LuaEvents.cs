@@ -48,10 +48,7 @@ namespace NetLua
             LuaObject f1 = getMetamethod(a, f);
             LuaObject f2 = getMetamethod(b, f);
 
-            if (f1.IsNil)
-                return f2;
-            else
-                return f1;
+            return f1 | f2;
         }
 
         static LuaObject getEqualhandler(LuaObject a, LuaObject b)
@@ -86,7 +83,7 @@ namespace NetLua
             }
         }
 
-        static LuaObject getMetamethod(LuaObject obj, string e)
+        internal static LuaObject getMetamethod(LuaObject obj, string e)
         {
             if (obj.Metatable == null || obj.Metatable.IsNil)
                 return LuaObject.Nil;
@@ -108,7 +105,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__add");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -129,7 +126,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__sub");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -150,7 +147,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__mul");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -171,7 +168,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__div");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -192,7 +189,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__mod");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -213,7 +210,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__pow");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
             }
 
@@ -234,7 +231,7 @@ namespace NetLua
                 var handler = getMetamethod(op, "__unm");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op);
+                    return handler.Call(op)[0];
                 }
             }
 
@@ -261,14 +258,14 @@ namespace NetLua
             {
                 handler = getMetamethod(table, "__index");
                 if (!handler.IsNil)
-                    return handler.Call(table, key);
+                    return handler.Call(table, key)[0];
                 else
                     throw new LuaException("Invalid argument");
             }
 
             if (handler.IsFunction)
             {
-                return handler.AsFunction()(table, key);
+                return handler.AsFunction()(table, key)[0];
             }
             else if (!handler.IsNil)
             {
@@ -316,7 +313,7 @@ namespace NetLua
             return LuaObject.Nil;
         }
 
-        internal static LuaObject call_event(LuaObject func, LuaObject[] args)
+        internal static LuaObject[] call_event(LuaObject func, LuaObject[] args)
         {
             if (func.IsFunction)
             {
@@ -347,7 +344,7 @@ namespace NetLua
                 var handler = getMetamethod(op, "__len");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op);
+                    return handler.Call(op)[0];
                 }
                 else if (op.IsTable)
                 {
@@ -371,7 +368,7 @@ namespace NetLua
                 var handler = getBinhandler(op1, op2, "__concat");
                 if (!handler.IsNil)
                 {
-                    return handler.Call(op1, op2);
+                    return handler.Call(op1, op2)[0];
                 }
                 else
                 {
@@ -388,7 +385,7 @@ namespace NetLua
             }
             var handler = getEqualhandler(op1, op2);
             if (!handler.IsNil)
-                return !(!(handler.Call(op1, op2).AsBool()));
+                return !(!(handler.Call(op1, op2)[0].AsBool()));
             else
                 return false;
         }
@@ -403,7 +400,7 @@ namespace NetLua
             {
                 var handler = getBinhandler(op1, op2, "__lt");
                 if (!handler.IsNil)
-                    return !(!(handler.Call(op1, op2).AsBool()));
+                    return !(!(handler.Call(op1, op2)[0].AsBool()));
                 else
                     return LuaObject.Nil;
             }
@@ -419,7 +416,7 @@ namespace NetLua
             {
                 var handler = getBinhandler(op1, op2, "__le");
                 if (!handler.IsNil)
-                    return !(!(handler.Call(op1, op2).AsBool()));
+                    return !(!(handler.Call(op1, op2)[0].AsBool()));
                 else
                     return LuaObject.Nil;
             }
@@ -437,7 +434,7 @@ namespace NetLua
         {
             var handler = getMetamethod(op, "__tostring");
             if (!handler.IsNil)
-                return handler.Call(op);
+                return handler.Call(op)[0];
             else
                 return op.ToString();
         }

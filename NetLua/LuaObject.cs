@@ -34,7 +34,7 @@ namespace NetLua
     /// <summary>
     /// A Lua function
     /// </summary>
-    public delegate LuaObject LuaFunction(params LuaObject[] args);
+    public delegate LuaObject[] LuaFunction(params LuaObject[] args);
 
     // http://www.lua.org/pil/2.html
     /// <summary>
@@ -151,14 +151,6 @@ namespace NetLua
                 if (@delegate != null)
                 {
                     return FromFunction(@delegate);
-                }
-            }
-
-            {
-                var @delegate = obj as Delegate;
-                if (@delegate != null)
-                {
-                    return FromDelegate(@delegate);
                 }
             }
 
@@ -293,15 +285,6 @@ namespace NetLua
             return new LuaObject { luaobj = fn, type = LuaType.function, Metatable = Nil };
         }
 
-        /// <summary>
-        /// Creates a Lua object from a delegate
-        /// </summary>
-        /// <returns>A function</returns>
-        public static LuaObject FromDelegate(Delegate a)
-        {
-            return FromFunction((args) => DelegateAdapter(a, args));
-        }
-
         public static implicit operator LuaObject(LuaFunction fn)
         {
             return FromFunction(fn);
@@ -316,11 +299,6 @@ namespace NetLua
                 throw new LuaException("cannot call non-function");
 
             return fn;
-        }
-
-        private static LuaObject DelegateAdapter(Delegate @delegate, IEnumerable<LuaObject> args)
-        {
-            return FromObject(@delegate.DynamicInvoke((from a in args select a.luaobj).ToArray()));
         }
         #endregion
 
@@ -467,6 +445,36 @@ namespace NetLua
             return !(a == b);
         }
 
+        public static LuaObject operator |(LuaObject a, object b)
+        {
+            if (a.IsNil || !a.AsBool())
+            {
+                if (b is LuaObject)
+                    return b as LuaObject;
+                else
+                    return LuaObject.FromObject(b);
+            }
+            else
+            {
+                return a;
+            }
+        }
+
+        public static LuaObject operator &(LuaObject a, object b)
+        {
+            if (a.IsNil || !a.AsBool())
+            {
+                return a;
+            }
+            else
+            {
+                if (b is LuaObject)
+                    return b as LuaObject;
+                else
+                    return LuaObject.FromObject(b);
+            }
+        }
+
         public IEnumerator<KeyValuePair<LuaObject, LuaObject>> GetEnumerator()
         {
             var table = luaobj as IEnumerable<KeyValuePair<LuaObject, LuaObject>>;
@@ -572,7 +580,7 @@ namespace NetLua
             }
         }
 
-        public LuaObject Call(params LuaObject[] args)
+        public LuaObject[] Call(params LuaObject[] args)
         {
             return LuaEvents.call_event(this, args);
         }

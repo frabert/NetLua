@@ -12,6 +12,16 @@ namespace NetLua
         LuaContext ctx = new LuaContext();
         Parser p = new Parser();
 
+        public static LuaObject[] Return()
+        {
+            return new LuaObject[] { LuaObject.Nil };
+        }
+
+        public static LuaObject[] Return(params LuaObject[] values)
+        {
+            return values;
+        }
+
         public Lua()
         {
             ctx.Set("assert", (LuaFunction)assert);
@@ -28,13 +38,13 @@ namespace NetLua
             ctx.Set("type", (LuaFunction)type);
         }
 
-        public LuaObject DoFile(string Filename)
+        public LuaObject[] DoFile(string Filename)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);
         }
 
-        public LuaObject DoString(string Chunk)
+        public LuaObject[] DoString(string Chunk)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);
@@ -50,7 +60,7 @@ namespace NetLua
 
         #region Basic functions
 
-        LuaObject assert(LuaObject[] args)
+        LuaObject[] assert(LuaObject[] args)
         {
             if (args.Length > 0)
             {
@@ -62,58 +72,58 @@ namespace NetLua
                         throw new LuaException(args[1].ToString());
                 }
             }
-            return LuaObject.Nil;
+            return Return();
         }
 
-        LuaObject dofile(LuaObject[] args)
+        LuaObject[] dofile(LuaObject[] args)
         {
             return DoFile(args[0].ToString());
         }
 
-        LuaObject error(LuaObject[] args)
+        LuaObject[] error(LuaObject[] args)
         {
             throw new LuaException(args[0].ToString());
         }
 
-        LuaObject getmetatable(LuaObject[] args)
+        LuaObject[] getmetatable(LuaObject[] args)
         {
-            return args[0].Metatable;
+            return Return(args[0].Metatable);
         }
 
-        LuaObject setmetatable(LuaObject[] args)
+        LuaObject[] setmetatable(LuaObject[] args)
         {
             args[0].Metatable = args[1];
-            return LuaObject.Nil;
+            return Return();
         }
 
-        LuaObject rawequal(LuaObject[] args)
+        LuaObject[] rawequal(LuaObject[] args)
         {
-            return args[0] == args[1];
+            return Return(args[0] == args[1]);
         }
 
-        LuaObject rawget(LuaObject[] args)
+        LuaObject[] rawget(LuaObject[] args)
         {
-            return LuaEvents.rawget(args[0], args[1]);
+            return Return(LuaEvents.rawget(args[0], args[1]));
         }
 
-        LuaObject rawset(LuaObject[] args)
+        LuaObject[] rawset(LuaObject[] args)
         {
             LuaEvents.rawset(args[0], args[1], args[2]);
-            return args[0];
+            return Return(args[0]);
         }
 
-        LuaObject rawlen(LuaObject[] args)
+        LuaObject[] rawlen(LuaObject[] args)
         {
             LuaObject obj = args[0];
             if (obj.IsString)
-                return obj.AsString().Length;
+                return Return(obj.AsString().Length);
             else if (obj.IsTable)
-                return obj.AsTable().Count;
+                return Return(obj.AsTable().Count);
             else
                 throw new LuaException("invalid argument");
         }
 
-        LuaObject tonumber(LuaObject[] args)
+        LuaObject[] tonumber(LuaObject[] args)
         {
             LuaObject obj = args[0];
             if (args.Length == 1)
@@ -122,17 +132,17 @@ namespace NetLua
                 if (obj.IsString)
                 {
                     if (double.TryParse(obj.AsString(), out d))
-                        return d;
+                        return Return(d);
                     else
-                        return LuaObject.Nil;
+                        return Return();
                 }
                 else if (obj.IsNumber)
                 {
-                    return obj.AsNumber();
+                    return Return(obj.AsNumber());
                 }
                 else
                 {
-                    return LuaObject.Nil;
+                    return Return();
                 }
             }
             else
@@ -141,33 +151,33 @@ namespace NetLua
             }
         }
 
-        LuaObject tostring(LuaObject[] args)
+        LuaObject[] tostring(LuaObject[] args)
         {
-            return LuaEvents.tostring_event(args[0]);
+            return Return(LuaEvents.tostring_event(args[0]));
         }
 
-        LuaObject type(LuaObject[] args)
+        LuaObject[] type(LuaObject[] args)
         {
             switch (args[0].Type)
             {
                 case LuaType.boolean:
-                    return "boolean";
+                    return Return("boolean");
                 case LuaType.function:
-                    return "function";
+                    return Return("function");
                 case LuaType.nil:
-                    return "nil";
+                    return Return("nil");
                 case LuaType.number:
-                    return "number";
+                    return Return("number");
                 case LuaType.@string:
-                    return "string";
+                    return Return("string");
                 case LuaType.table:
-                    return "table";
+                    return Return("table");
                 case LuaType.thread:
-                    return "thread";
+                    return Return("thread");
                 case LuaType.userdata:
-                    return "userdata";
+                    return Return("userdata");
             }
-            return LuaObject.Nil;
+            return Return();
         }
 
         #endregion
