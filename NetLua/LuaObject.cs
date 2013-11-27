@@ -55,7 +55,7 @@ namespace NetLua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>>, IEquatable<LuaObject>
+    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
     {
         private object luaobj;
         private LuaType type;
@@ -64,6 +64,11 @@ namespace NetLua
         public LuaObject()
         {
             this.metatable = Nil;
+        }
+
+        ~LuaObject()
+        {
+            LuaEvents.gc_event(this);
         }
 
         public LuaObject Metatable
@@ -409,6 +414,59 @@ namespace NetLua
             return LuaEvents.pow_event(a, b);
         }
 
+        public static LuaObject operator <(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.lt_event(a, b);
+        }
+
+        public static LuaObject operator >(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.lt_event(b, a);
+        }
+
+        public static LuaObject operator <=(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.le_event(a, b);
+        }
+
+        public static LuaObject operator >=(LuaObject a, LuaObject b)
+        {
+            return LuaEvents.le_event(b, a);
+        }
+
+        public static bool operator ==(LuaObject a, object b)
+        {
+            if (a.IsNil)
+            {
+                if (b == null)
+                    return true;
+                else
+                {
+                    if (b is LuaObject)
+                        return (b as LuaObject).IsNil;
+                    else
+                        return false;
+                }
+            }
+            else
+            {
+                if (b == null)
+                    return false;
+                else
+                {
+                    if (b is LuaObject)
+                        return (b as LuaObject).luaobj.Equals(a.luaobj);
+                    else
+                        return a.luaobj.Equals(b);
+                }
+            }
+        }
+
+        public static bool operator !=(LuaObject a, object b)
+        {
+            return !(a == b);
+        }
+
         public IEnumerator<KeyValuePair<LuaObject, LuaObject>> GetEnumerator()
         {
             var table = luaobj as IEnumerable<KeyValuePair<LuaObject, LuaObject>>;
@@ -483,7 +541,7 @@ namespace NetLua
         }
 
         // See last paragraph in http://www.lua.org/pil/13.2.html
-        public bool Equals(LuaObject other)
+        /*public bool Equals(LuaObject other)
         {
             // luaobj will not be null unless type is Nil
             return (other.type == type) && (luaobj == null || luaobj.Equals(other.luaobj));
@@ -493,8 +551,17 @@ namespace NetLua
         {
             if (obj is LuaObject)
                 return Equals((LuaObject)obj);
-            // TODO: It would be nice to automatically compare other types (strings, ints, doubles, etc.) to LuaObjects.
-            return false;
+            else
+                return Equals(FromObject(obj));
+            //return false;
+        }*/
+
+        public override bool Equals(object obj)
+        {
+            if (obj is LuaObject)
+                return luaobj.Equals((obj as LuaObject).luaobj);
+            else
+                return luaobj.Equals(obj);
         }
 
         public override int GetHashCode()

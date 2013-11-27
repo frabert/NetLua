@@ -8,6 +8,11 @@ namespace NetLua
 {
     public static class LuaInterpreter
     {
+        internal struct LuaReturnStatus
+        {
+            public bool returned, broke;
+        }
+
         static LuaObject EvalBinaryExpression(BinaryExpression Expression, LuaContext Context)
         {
             LuaObject left = EvalExpression(Expression.Left, Context), right = EvalExpression(Expression.Right, Context);
@@ -18,21 +23,21 @@ namespace NetLua
                 case BinaryOp.And:
                     return left.AsBool() && right.AsBool();
                 case BinaryOp.Concat:
-                    return left.AsString() + right.AsString();
+                    return LuaEvents.concat_event(left, right);
                 case BinaryOp.Different:
-                    return !(left.Equals(right));
+                    return !(LuaEvents.eq_event(left, right).AsBool());
                 case BinaryOp.Division:
                     return left / right;
                 case BinaryOp.Equal:
-                    return left.Equals(right);
+                    return LuaEvents.eq_event(left, right);
                 case BinaryOp.GreaterOrEqual:
-                    return left.AsNumber() >= right.AsNumber();
+                    return left >= right;
                 case BinaryOp.GreaterThan:
-                    return left.AsNumber() > right.AsNumber();
+                    return left > right;
                 case BinaryOp.LessOrEqual:
-                    return left.AsNumber() <= right.AsNumber();
+                    return left <= right;
                 case BinaryOp.LessThan:
-                    return left.AsNumber() < right.AsNumber();
+                    return left < right;
                 case BinaryOp.Modulo:
                     return left % right;
                 case BinaryOp.Multiplication:
@@ -170,7 +175,7 @@ namespace NetLua
             LuaObject obj = LuaObject.FromFunction(delegate(LuaObject[] args)
             {
                 LuaContext ctx = new LuaContext(Context);
-                bool ret;
+                LuaReturnStatus ret;
                 for (int i = 0; i < fdef.Arguments.Count; i++)
                 {
                     if (i > args.Length)
@@ -188,9 +193,10 @@ namespace NetLua
             return obj;
         }
 
-        static LuaObject EvalIf(If stat, LuaContext Context, out bool returned)
+        static LuaObject EvalIf(If stat, LuaContext Context, out LuaReturnStatus returned)
         {
-            returned = false;
+            returned.broke = false;
+            returned.returned = false;
             LuaObject obj = LuaObject.Nil;
 
             if (EvalExpression(stat.Condition, Context).AsBool())
@@ -221,18 +227,41 @@ namespace NetLua
             return obj;
         }
 
-        static LuaObject EvalWhile(While stat, LuaContext Context, out bool returned)
+        static LuaObject EvalWhile(While stat, LuaContext Context, out LuaReturnStatus returned)
         {
-            returned = false;
+            returned.returned = false;
+            returned.broke = false;
             LuaObject cond = EvalExpression(stat.Condition, Context);
+            LuaContext ctx = new LuaContext(Context);
             while (cond.AsBool())
             {
-                LuaContext ctx = new LuaContext(Context);
                 LuaObject obj = EvalBlock(stat.Block, ctx, out returned);
-                if (returned)
+                if (returned.broke)
+                    break;
+                if (returned.returned)
                     return obj;
                 else
                     cond = EvalExpression(stat.Condition, Context);
+            }
+            return LuaObject.Nil;
+        }
+
+        static LuaObject EvalRepeat(Repeat stat, LuaContext Context, out LuaReturnStatus returned)
+        {
+            returned.returned = false;
+            returned.broke = false;
+            LuaContext ctx = new LuaContext(Context);
+            while (true)
+            {
+                LuaObject obj = EvalBlock(stat.Block, ctx, out returned);
+
+                if (returned.broke)
+                    break;
+                if (returned.returned)
+                    return obj;
+                LuaObject cond = EvalExpression(stat.Condition, ctx);
+                if (cond.AsBool())
+                    break;
             }
             return LuaObject.Nil;
         }
@@ -262,9 +291,10 @@ namespace NetLua
             EvalExpression(Expression.Expression, Context)[EvalExpression(Expression.Index, Context)] = Value;
         }
 
-        public static LuaObject EvalBlock(Block Block, LuaContext Context, out bool returned)
+        internal static LuaObject EvalBlock(Block Block, LuaContext Context, out LuaReturnStatus returned)
         {
-            returned = false;
+            returned.broke = false;
+            returned.returned = false;
             LuaObject obj = LuaObject.Nil;
             foreach (IStatement stat in Block.Statements)
             {
@@ -281,7 +311,7 @@ namespace NetLua
                 else if (stat is Return)
                 {
                     Return ret = stat as Return;
-                    returned = true;
+                    returned.returned = true;
                     return EvalExpression(ret.Expression, Context);
                 }
                 else if (stat is FunctionCall)
@@ -294,20 +324,32 @@ namespace NetLua
                     Block block = stat as Block;
                     LuaContext ctx = new LuaContext(Context);
                     obj = EvalBlock(block, ctx, out returned);
-                    if (returned)
+                    if (returned.returned)
                         return obj;
                 }
                 else if (stat is If)
                 {
                     obj = EvalIf(stat as If, Context, out returned);
-                    if (returned)
+                    if (returned.returned)
                         return obj;
                 }
                 else if (stat is While)
                 {
                     obj = EvalWhile(stat as While, Context, out returned);
-                    if (returned)
+                    if (returned.returned)
                         return obj;
+                }
+                else if (stat is Repeat)
+                {
+                    obj = EvalRepeat(stat as Repeat, Context, out returned);
+                    if (returned.returned)
+                        return obj;
+                }
+                else if (stat is Break)
+                {
+                    returned.returned = false;
+                    returned.broke = true;
+                    return LuaObject.Nil;
                 }
                 else
                 {

@@ -34,6 +34,19 @@ namespace NetLua
             return (ParseBlock(root));
         }
 
+        public Ast.Block ParseFile(string Filename)
+        {
+            string source = System.IO.File.ReadAllText(Filename);
+            ParseTree parseTree = parser.Parse(source, Filename);
+            ParseTreeNode root = parseTree.Root;
+            if (root == null)
+            {
+                Irony.LogMessage msg = parseTree.ParserMessages[0];
+                throw new LuaException(Filename, msg.Location.Line, msg.Location.Column, msg.Message);
+            }
+            return (ParseBlock(root));
+        }
+
         #region Binary expression tree
         Ast.IExpression ParseOrOp(ParseTreeNode node)
         {
@@ -574,6 +587,8 @@ namespace NetLua
                         block.Statements.Add(ParseFunctionCall(child)); break;
                     case "ReturnStat":
                         block.Statements.Add(ParseReturnStat(child)); break;
+                    case "BreakStat":
+                        block.Statements.Add(new Ast.Break()); break;
                     case "DoBlock":
                         block.Statements.Add(ParseDoBlock(child)); break;
                     case "If":
@@ -625,6 +640,7 @@ namespace NetLua
 
             NonTerminal Statement = new NonTerminal("Statement");
             NonTerminal ReturnStatement = new NonTerminal("ReturnStat");
+            NonTerminal BreakStatement = new NonTerminal("BreakStat");
             NonTerminal Assignment = new NonTerminal("Assignment");
             NonTerminal LocalAssignment = new NonTerminal("LocalAssignment");
             NonTerminal FunctionDecl = new NonTerminal("FunctionDecl");
@@ -725,8 +741,11 @@ namespace NetLua
 
             Repeat.Rule = "repeat" + Chunk + "until" + Expression;
 
+            BreakStatement.Rule = "break";
+
             Statement.Rule =
                 ReturnStatement
+                | BreakStatement
                 | Assignment
                 | LocalAssignment
                 | FunctionCall
@@ -743,7 +762,7 @@ namespace NetLua
                 "nil", "local",
                 "function", "while",
                 "if", "for", "repeat", "until",
-                "end", "do", "return");
+                "end", "do", "return", "break");
 
             this.MarkPunctuation(".", ",", ";", "(", ")", "[", "]", "{", "}", "=");
             this.MarkTransient(Statement);

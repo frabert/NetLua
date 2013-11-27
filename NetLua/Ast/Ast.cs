@@ -31,11 +31,9 @@ namespace NetLua.Ast
         Length
     }
 
-    public interface IStatement
-    { }
+    public interface IStatement { }
 
-    public interface IExpression
-    { }
+    public interface IExpression { }
 
     public interface IAssignable : IExpression
     { }
@@ -121,6 +119,8 @@ namespace NetLua.Ast
     {
         public IExpression Expression;
     }
+
+    public class Break : IStatement { }
 
     public class LocalAssignment : IStatement
     {

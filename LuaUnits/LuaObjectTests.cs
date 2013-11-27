@@ -39,5 +39,13 @@ namespace LuaUnits
             Assert.IsFalse(obj1.Equals(obj2));
             Assert.IsFalse(obj2.Equals(obj1));
         }
+
+        [Test]
+        public static void GeneralEquality()
+        {
+            LuaObject a = "ciao";
+
+            Assert.IsTrue(a == "ciao");
+        }
     }
 }
