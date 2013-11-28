@@ -260,8 +260,40 @@ namespace NetLua
             {
                 Ast.LocalAssignment assign = new Ast.LocalAssignment();
 
-                var left = node.ChildNodes[1];
-                var right = node.ChildNodes[2];
+
+                var child = node.ChildNodes[1];
+
+                if (child.ChildNodes[0].Term.Name == "LocalFunction")
+                {
+                    child = child.ChildNodes[0];
+
+                    var argsNode = child.ChildNodes[2];
+                    var blockNode = child.ChildNodes[3];
+
+                    assign.Names.Add(child.ChildNodes[1].Token.ValueString);
+                    var func = new Ast.FunctionDefinition();
+
+                    if (argsNode.ChildNodes.Count > 0)
+                    {
+                        argsNode = argsNode.ChildNodes[0];
+                        while (argsNode.ChildNodes.Count > 0)
+                        {
+                            string ident = argsNode.ChildNodes[0].Token.ValueString;
+                            func.Arguments.Add(new Ast.Argument() { Name = ident });
+                            if (argsNode.ChildNodes.Count == 1)
+                                break;
+                            argsNode = argsNode.ChildNodes[1];
+                        }
+                    }
+
+                    func.Body = ParseBlock(blockNode);
+
+                    assign.Values.Add(func);
+                    return assign;
+                }
+
+                var left = child.ChildNodes[0];
+                var right = child.ChildNodes[1];
 
                 assign.Names.Add(left.ChildNodes[0].Token.ValueString);
 
@@ -296,8 +328,9 @@ namespace NetLua
                 {
                     child = child.ChildNodes[0];
                     ret.Expressions.Add(ParseExpression(child.ChildNodes[0]));
-                    child = node.ChildNodes[1];
+                    child = child.ChildNodes[1];
                 }
+                return ret;
             }
             throw new Exception("Invalid ReturnStat node");
         }
@@ -647,11 +680,43 @@ namespace NetLua
                         block.Statements.Add(ParseRepeat(child)); break;
                     case "FunctionDecl":
                         block.Statements.Add(ParseFunctionDecl(child)); break;
+                    case "For":
+                        block.Statements.Add(ParseFor(child)); break;
                     default:
                         throw new NotImplementedException("Node not yet implemented");
                 }
             }
             return block;
+        }
+
+        Ast.IStatement ParseFor(ParseTreeNode node)
+        {
+            if (node.Term.Name == "For")
+            {
+                var block = ParseDoBlock(node.ChildNodes[2]);
+                var type = node.ChildNodes[1].ChildNodes[0];
+                if (type.Term.Name == "NumericFor")
+                {
+                    var cycle = new Ast.NumericFor();
+                    cycle.Block = block;
+                    cycle.Variable = type.ChildNodes[0].Token.ValueString;
+                    cycle.Var = ParseExpression(type.ChildNodes[1]);
+                    cycle.Limit = ParseExpression(type.ChildNodes[2]);
+                    cycle.Step = new Ast.NumberLiteral() { Value = 1 };
+                    if (type.ChildNodes[3].ChildNodes.Count > 0)
+                    {
+                        var child = type.ChildNodes[3].ChildNodes[0];
+                        cycle.Step = ParseExpression(child);
+                    }
+
+                    return cycle;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            throw new Exception("Invalid For node");
         }
     }
 
@@ -698,6 +763,7 @@ namespace NetLua
             NonTerminal Else = new NonTerminal("Else");
             NonTerminal While = new NonTerminal("While");
             NonTerminal Repeat = new NonTerminal("Repeat");
+            NonTerminal For = new NonTerminal("For");
 
             NonTerminal PowerOp = new NonTerminal("PowerOp");
             NonTerminal MulOp = new NonTerminal("MulOp");
@@ -786,8 +852,10 @@ namespace NetLua
                 AssignVarChunk + "=" + AssignExpChunk;
 
             var LocalAssignNameChunk = new NonTerminal("AssignNameChunk");
+            var LocalFunction = new NonTerminal("LocalFunction");
             LocalAssignNameChunk.Rule = Identifier + (("," + LocalAssignNameChunk) | Empty);
-            LocalAssignment.Rule = "local" + LocalAssignNameChunk + ("=" + AssignExpChunk | Empty);
+            LocalFunction.Rule = "function" + Identifier + DefArguments + Chunk + "end";
+            LocalAssignment.Rule = "local" + (LocalAssignNameChunk + ("=" + AssignExpChunk | Empty) | LocalFunction);
 
             Elseif.Rule = "elseif" + Expression + "then" + Chunk + (Elseif | Empty);
             Else.Rule = "else" + Chunk;
@@ -802,6 +870,17 @@ namespace NetLua
 
             BreakStatement.Rule = "break";
 
+            var NumericFor = new NonTerminal("NumericFor");
+            NumericFor.Rule = Identifier + "=" + Expression + "," + Expression + ("," + Expression | Empty);
+            var GenericFor = new NonTerminal("GenericFor");
+            var NameList = new NonTerminal("NameList");
+            var ExpList = new NonTerminal("ExpList");
+            NameList.Rule = Identifier + ("," + NameList | Empty);
+            ExpList.Rule = Expression + ("," + ExpList | Empty);
+            GenericFor.Rule = NameList + "in" + ExpList;
+
+            For.Rule = "for" + (NumericFor | GenericFor) + DoBlock;
+
             Statement.Rule =
                 ReturnStatement
                 | BreakStatement
@@ -809,6 +888,7 @@ namespace NetLua
                 | LocalAssignment
                 | FunctionCall
                 | FunctionDecl
+                | For
                 | If
                 | While
                 | DoBlock

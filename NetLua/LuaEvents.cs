@@ -65,7 +65,7 @@ namespace NetLua
                 return LuaObject.Nil;
         }
 
-        static LuaObject toNumber(LuaObject obj)
+        internal static LuaObject toNumber(LuaObject obj)
         {
             if (obj.IsNumber)
                 return LuaObject.FromNumber(obj.AsNumber());
@@ -265,7 +265,7 @@ namespace NetLua
 
             if (handler.IsFunction)
             {
-                return handler.AsFunction()(table, key)[0];
+                return handler.AsFunction()(new LuaObject[]{table, key})[0];
             }
             else if (!handler.IsNil)
             {
@@ -304,7 +304,7 @@ namespace NetLua
 
             if (handler.IsFunction)
             {
-                handler.AsFunction()(table, key, value);
+                handler.AsFunction()(new LuaObject[]{table, key, value});
             }
             else
             {
@@ -313,7 +313,7 @@ namespace NetLua
             return LuaObject.Nil;
         }
 
-        internal static LuaObject[] call_event(LuaObject func, LuaObject[] args)
+        internal static LuaArguments call_event(LuaObject func, LuaArguments args)
         {
             if (func.IsFunction)
             {
@@ -426,7 +426,7 @@ namespace NetLua
         {
             var handler = getMetamethod(op, "__gc");
             if (handler.IsFunction)
-                handler.AsFunction()(op);
+                handler.AsFunction()(new LuaObject[] {op});
             return LuaObject.Nil;
         }
 

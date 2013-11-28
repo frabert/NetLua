@@ -9,13 +9,13 @@ namespace LuaTest
 {
     class Program
     {
-        static LuaObject[] print(LuaObject[] args)
+        static LuaArguments print(LuaArguments args)
         {
             Console.WriteLine(String.Join("\t", Array.ConvertAll<LuaObject, string>(args, x=>x.ToString())));
             return Lua.Return(LuaObject.Nil);
         }
 
-        static LuaObject[] read(LuaObject[] args)
+        static LuaArguments read(LuaArguments args)
         {
             return Lua.Return(Console.ReadLine());
         }

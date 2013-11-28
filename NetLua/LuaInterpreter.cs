@@ -25,7 +25,7 @@ namespace NetLua
                 case BinaryOp.Concat:
                     return LuaEvents.concat_event(left, right);
                 case BinaryOp.Different:
-                    return !(LuaEvents.eq_event(left, right).AsBool());
+                    return !(LuaEvents.eq_event(left, right));
                 case BinaryOp.Division:
                     return left / right;
                 case BinaryOp.Equal:
@@ -87,11 +87,11 @@ namespace NetLua
             }
         }
 
-        static LuaObject[] EvalFunctionCall(FunctionCall Expression, LuaContext Context)
+        static LuaArguments EvalFunctionCall(FunctionCall Expression, LuaContext Context)
         {
             LuaObject func = EvalExpression(Expression.Function, Context)[0];
 
-            LuaObject[] args = null;
+            LuaArguments args = null;
             if (Expression.Arguments != null || Expression.Arguments.Count != 0)
             {
                 List<LuaObject> values = new List<LuaObject>();
@@ -112,7 +112,7 @@ namespace NetLua
             return table[index];
         }
 
-        static LuaObject[] EvalExpression(IExpression Expression, LuaContext Context)
+        static LuaArguments EvalExpression(IExpression Expression, LuaContext Context)
         {
             if (Expression is NumberLiteral)
                 return Lua.Return(((NumberLiteral)Expression).Value);
@@ -158,7 +158,7 @@ namespace NetLua
                 return Lua.Return(EvalTableConstructor(tctor, Context));
             }
 
-            return Lua.Return(LuaObject.Nil);
+            return Lua.Return();
         }
 
         static LuaObject EvalTableConstructor(TableConstructor tctor, LuaContext Context)
@@ -176,7 +176,7 @@ namespace NetLua
 
         static LuaObject EvalFunctionDefinition(FunctionDefinition fdef, LuaContext Context)
         {
-            LuaObject obj = LuaObject.FromFunction(delegate(LuaObject[] args)
+            LuaObject obj = LuaObject.FromFunction(delegate(LuaArguments args)
             {
                 LuaContext ctx = new LuaContext(Context);
                 LuaReturnStatus ret;
@@ -197,11 +197,11 @@ namespace NetLua
             return obj;
         }
 
-        static LuaObject[] EvalIf(If stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalIf(If stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.broke = false;
             returned.returned = false;
-            LuaObject[] obj = new LuaObject[] { LuaObject.Nil };
+            LuaArguments obj = new LuaObject[] { LuaObject.Nil };
 
             if (EvalExpression(stat.Condition, Context)[0].AsBool())
             {
@@ -231,7 +231,7 @@ namespace NetLua
             return obj;
         }
 
-        static LuaObject[] EvalWhile(While stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalWhile(While stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.returned = false;
             returned.broke = false;
@@ -239,7 +239,7 @@ namespace NetLua
             LuaContext ctx = new LuaContext(Context);
             while (cond.AsBool())
             {
-                LuaObject[] obj = EvalBlock(stat.Block, ctx, out returned);
+                LuaArguments obj = EvalBlock(stat.Block, ctx, out returned);
                 if (returned.broke)
                     break;
                 if (returned.returned)
@@ -247,27 +247,91 @@ namespace NetLua
                 else
                     cond = EvalExpression(stat.Condition, Context)[0];
             }
-            return new LuaObject[] { LuaObject.Nil }; ;
+            return Lua.Return();
         }
 
-        static LuaObject[] EvalRepeat(Repeat stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalRepeat(Repeat stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.returned = false;
             returned.broke = false;
             LuaContext ctx = new LuaContext(Context);
             while (true)
             {
-                LuaObject[] obj = EvalBlock(stat.Block, ctx, out returned);
+                LuaArguments obj = EvalBlock(stat.Block, ctx, out returned);
 
                 if (returned.broke)
                     break;
                 if (returned.returned)
                     return obj;
                 LuaObject cond = EvalExpression(stat.Condition, ctx)[0];
-                if (cond.AsBool())
+                if (cond)
                     break;
             }
-            return new LuaObject[] { LuaObject.Nil }; ;
+            return Lua.Return();
+        }
+
+        static LuaArguments EvalNumericFor(NumericFor stat, LuaContext Context, out LuaReturnStatus returned)
+        {
+            returned.broke = false;
+            returned.returned = false;
+            var varList = EvalExpression(stat.Var, Context);
+            var limitList = EvalExpression(stat.Limit, Context);
+            var stepList = EvalExpression(stat.Step, Context);
+            var var = LuaEvents.toNumber(varList[0]);
+            var limit = LuaEvents.toNumber(limitList[0]);
+            var step = LuaEvents.toNumber(stepList[0]);
+
+            if (!(var & limit & step).AsBool())
+            {
+                throw new LuaException("Error in for loop");
+            }
+            LuaContext ctx = new LuaContext(Context);
+            while ((step > 0 & var <= limit) | (step <= 0 & var >= limit))
+            {
+                ctx.SetLocal(stat.Variable, var);
+                LuaArguments obj = EvalBlock(stat.Block, ctx, out returned);
+                if (returned.broke)
+                    break;
+                if (returned.returned)
+                    return obj;
+                var = var + step;
+            }
+            return Lua.Return();
+        }
+
+        static LuaArguments EvalGenericFor(GenericFor stat, LuaContext Context, out LuaReturnStatus returned)
+        {
+            returned.broke = false;
+            returned.returned = false;
+
+            LuaArguments args = null;
+            foreach (IExpression expr in stat.Expressions)
+            {
+                if (args == null)
+                    args = EvalExpression(expr, Context);
+                else
+                    args.Concat(EvalExpression(expr, Context));
+            }
+            LuaObject f = args[0], s = args[1], var = args[2];
+            LuaContext ctx = new LuaContext(Context);
+            while (true)
+            {
+                LuaArguments res = f.Call(s, var);
+                for (int i = 0; i < stat.Variables.Count; i++)
+                {
+                    ctx.SetLocal(stat.Variables[i], res[i]);
+                }
+                if (res[0].IsNil)
+                    break;
+                var = res[0];
+                LuaArguments obj = EvalBlock(stat.Block, ctx, out returned);
+                if (returned.broke)
+                    break;
+                if (returned.returned)
+                    return obj;
+            }
+
+            return Lua.Return();
         }
 
         static void SetAssignable(IAssignable Expression, LuaObject Value, LuaContext Context)
@@ -295,39 +359,43 @@ namespace NetLua
             EvalExpression(Expression.Expression, Context)[0][EvalExpression(Expression.Index, Context)[0]] = Value;
         }
 
-        internal static LuaObject[] EvalBlock(Block Block, LuaContext Context, out LuaReturnStatus returned)
+        internal static LuaArguments EvalBlock(Block Block, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.broke = false;
             returned.returned = false;
-            LuaObject[] obj = new LuaObject[] { LuaObject.Nil };
+            LuaArguments obj = new LuaObject[] { LuaObject.Nil };
             foreach (IStatement stat in Block.Statements)
             {
                 if (stat is Assignment)
                 {
                     Assignment assign = stat as Assignment;
-                    List<LuaObject> values = new List<LuaObject>();
+                    LuaArguments values = null;
                     foreach (IExpression expr in assign.Expressions)
                     {
-                        values.AddRange(EvalExpression(expr, Context));
+                        if (values == null)
+                            values = EvalExpression(expr, Context);
+                        else
+                            values.Concat(EvalExpression(expr, Context));
                     }
                     for (int i = 0; i < assign.Variables.Count; i++)
                     {
-                        if (i < values.Count)
                             SetAssignable(assign.Variables[i], values[i], Context);
                     }
                 }
                 else if (stat is LocalAssignment)
                 {
                     LocalAssignment assign = stat as LocalAssignment;
-                    List<LuaObject> values = new List<LuaObject>();
+                    LuaArguments values = null;
                     foreach (IExpression expr in assign.Values)
                     {
-                        values.AddRange(EvalExpression(expr, Context));
+                        if (values == null)
+                            values = EvalExpression(expr, Context);
+                        else
+                            values.Concat(EvalExpression(expr, Context));
                     }
                     for (int i = 0; i < assign.Names.Count; i++)
                     {
-                        if (i < values.Count)
-                            Context.SetLocal(assign.Names[i], values[i]);
+                        Context.SetLocal(assign.Names[i], values[i]);
                     }
                 }
                 else if (stat is Return)
@@ -377,6 +445,12 @@ namespace NetLua
                     returned.returned = false;
                     returned.broke = true;
                     return Lua.Return(LuaObject.Nil);
+                }
+                else if (stat is NumericFor)
+                {
+                    obj = EvalNumericFor(stat as NumericFor, Context, out returned);
+                    if (returned.returned)
+                        return obj;
                 }
                 else
                 {

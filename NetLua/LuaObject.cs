@@ -34,7 +34,66 @@ namespace NetLua
     /// <summary>
     /// A Lua function
     /// </summary>
-    public delegate LuaObject[] LuaFunction(params LuaObject[] args);
+    public delegate LuaArguments LuaFunction(LuaArguments args);
+
+    public class LuaArguments : IEnumerable<LuaObject>
+    {
+        List<LuaObject> list = new List<LuaObject>();
+        
+        public LuaArguments(LuaObject[] Objects)
+        {
+            list.AddRange(Objects);
+        }
+
+        public int Length
+        {
+            get
+            {
+                return list.Count;
+            }
+        }
+
+        public LuaObject this[int Index]
+        {
+            get
+            {
+                if (Index > list.Count)
+                    return LuaObject.Nil;
+                else
+                    return list[Index];
+            }
+            set
+            {
+                if (Index > list.Count)
+                    list[Index] = value;
+            }
+        }
+
+        public void Concat(LuaArguments args)
+        {
+            list.AddRange(args.list);
+        }
+
+        public IEnumerator<LuaObject> GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        public static implicit operator LuaArguments(LuaObject[] array)
+        {
+            return new LuaArguments(array);
+        }
+
+        public static implicit operator LuaObject[](LuaArguments args)
+        {
+            return args.list.ToArray();
+        }
+    }
 
     // http://www.lua.org/pil/2.html
     /// <summary>
@@ -193,6 +252,11 @@ namespace NetLua
             return FromBool(bln);
         }
 
+        public static implicit operator bool(LuaObject obj)
+        {
+            return obj.AsBool();
+        }
+
         /// <summary>
         /// Gets whether this is a boolean object
         /// </summary>
@@ -231,6 +295,11 @@ namespace NetLua
             return FromNumber(number);
         }
 
+        public static implicit operator double(LuaObject obj)
+        {
+            return obj.AsNumber();
+        }
+
         /// <summary>
         /// Gets whether this is a number object
         /// </summary>
@@ -263,6 +332,11 @@ namespace NetLua
         public static implicit operator LuaObject(string str)
         {
             return FromString(str);
+        }
+
+        public static implicit operator string(LuaObject obj)
+        {
+            return obj.AsString();
         }
 
         public bool IsString { get { return type == LuaType.@string; } }
@@ -580,7 +654,12 @@ namespace NetLua
             }
         }
 
-        public LuaObject[] Call(params LuaObject[] args)
+        public LuaArguments Call(params LuaObject[] args)
+        {
+            return this.Call(args);
+        }
+
+        public LuaArguments Call(LuaArguments args)
         {
             return LuaEvents.call_event(this, args);
         }

@@ -145,6 +145,20 @@ namespace NetLua.Ast
         public IExpression Condition;
     }
 
+    public class NumericFor : IStatement
+    {
+        public IExpression Var, Limit, Step;
+        public string Variable;
+        public Block Block;
+    }
+
+    public class GenericFor : IStatement
+    {
+        public List<string> Variables = new List<string>();
+        public List<IExpression> Expressions = new List<IExpression>();
+        public Block Block;
+    }
+
     public class If : IStatement
     {
         public IExpression Condition;

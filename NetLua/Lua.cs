@@ -12,12 +12,12 @@ namespace NetLua
         LuaContext ctx = new LuaContext();
         Parser p = new Parser();
 
-        public static LuaObject[] Return()
+        public static LuaArguments Return()
         {
             return new LuaObject[] { LuaObject.Nil };
         }
 
-        public static LuaObject[] Return(params LuaObject[] values)
+        public static LuaArguments Return(params LuaObject[] values)
         {
             return values;
         }
@@ -38,13 +38,13 @@ namespace NetLua
             ctx.Set("type", (LuaFunction)type);
         }
 
-        public LuaObject[] DoFile(string Filename)
+        public LuaArguments DoFile(string Filename)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);
         }
 
-        public LuaObject[] DoString(string Chunk)
+        public LuaArguments DoString(string Chunk)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);
@@ -60,7 +60,7 @@ namespace NetLua
 
         #region Basic functions
 
-        LuaObject[] assert(LuaObject[] args)
+        LuaArguments assert(LuaArguments args)
         {
             if (args.Length > 0)
             {
@@ -75,44 +75,44 @@ namespace NetLua
             return Return();
         }
 
-        LuaObject[] dofile(LuaObject[] args)
+        LuaArguments dofile(LuaArguments args)
         {
             return DoFile(args[0].ToString());
         }
 
-        LuaObject[] error(LuaObject[] args)
+        LuaArguments error(LuaArguments args)
         {
             throw new LuaException(args[0].ToString());
         }
 
-        LuaObject[] getmetatable(LuaObject[] args)
+        LuaArguments getmetatable(LuaArguments args)
         {
             return Return(args[0].Metatable);
         }
 
-        LuaObject[] setmetatable(LuaObject[] args)
+        LuaArguments setmetatable(LuaArguments args)
         {
             args[0].Metatable = args[1];
             return Return();
         }
 
-        LuaObject[] rawequal(LuaObject[] args)
+        LuaArguments rawequal(LuaArguments args)
         {
             return Return(args[0] == args[1]);
         }
 
-        LuaObject[] rawget(LuaObject[] args)
+        LuaArguments rawget(LuaArguments args)
         {
             return Return(LuaEvents.rawget(args[0], args[1]));
         }
 
-        LuaObject[] rawset(LuaObject[] args)
+        LuaArguments rawset(LuaArguments args)
         {
             LuaEvents.rawset(args[0], args[1], args[2]);
             return Return(args[0]);
         }
 
-        LuaObject[] rawlen(LuaObject[] args)
+        LuaArguments rawlen(LuaArguments args)
         {
             LuaObject obj = args[0];
             if (obj.IsString)
@@ -123,7 +123,7 @@ namespace NetLua
                 throw new LuaException("invalid argument");
         }
 
-        LuaObject[] tonumber(LuaObject[] args)
+        LuaArguments tonumber(LuaArguments args)
         {
             LuaObject obj = args[0];
             if (args.Length == 1)
@@ -151,12 +151,12 @@ namespace NetLua
             }
         }
 
-        LuaObject[] tostring(LuaObject[] args)
+        LuaArguments tostring(LuaArguments args)
         {
             return Return(LuaEvents.tostring_event(args[0]));
         }
 
-        LuaObject[] type(LuaObject[] args)
+        LuaArguments type(LuaArguments args)
         {
             switch (args[0].Type)
             {
