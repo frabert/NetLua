@@ -12,16 +12,27 @@ namespace NetLua
         LuaContext ctx = new LuaContext();
         Parser p = new Parser();
 
+        /// <summary>
+        /// Helper function for return Nil from a function
+        /// </summary>
+        /// <returns>Nil</returns>
         public static LuaArguments Return()
         {
             return new LuaObject[] { LuaObject.Nil };
         }
 
+        /// <summary>
+        /// Helper function for returning objects from a function
+        /// </summary>
+        /// <param name="values">The objects to return</param>
         public static LuaArguments Return(params LuaObject[] values)
         {
             return values;
         }
 
+        /// <summary>
+        /// Creates a new Lua context with the base functions already set
+        /// </summary>
         public Lua()
         {
             ctx.Set("assert", (LuaFunction)assert);
@@ -38,18 +49,28 @@ namespace NetLua
             ctx.Set("type", (LuaFunction)type);
         }
 
+        /// <summary>
+        /// Parses and executes the specified file
+        /// </summary>
+        /// <param name="Filename">The file to execute</param>
         public LuaArguments DoFile(string Filename)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);
         }
 
+        /// <summary>
+        /// Parses and executes the specified string
+        /// </summary>
         public LuaArguments DoString(string Chunk)
         {
             LuaInterpreter.LuaReturnStatus ret;
             return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);
         }
 
+        /// <summary>
+        /// The base context
+        /// </summary>
         public LuaContext Context
         {
             get

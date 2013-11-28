@@ -130,6 +130,9 @@ namespace NetLua
             LuaEvents.gc_event(this);
         }
 
+        /// <summary>
+        /// Gets or sets the object's metatable
+        /// </summary>
         public LuaObject Metatable
         {
             get
@@ -584,11 +587,6 @@ namespace NetLua
             }
             set
             {
-                /*var table = AsTable();
-                if (table == null)
-                    throw new LuaException("cannot index non-table");
-
-                table[key] = value;*/
                 if (IsTable)
                 {
                     var table = AsTable();
@@ -622,22 +620,6 @@ namespace NetLua
             return luaobj.ToString();
         }
 
-        // See last paragraph in http://www.lua.org/pil/13.2.html
-        /*public bool Equals(LuaObject other)
-        {
-            // luaobj will not be null unless type is Nil
-            return (other.type == type) && (luaobj == null || luaobj.Equals(other.luaobj));
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is LuaObject)
-                return Equals((LuaObject)obj);
-            else
-                return Equals(FromObject(obj));
-            //return false;
-        }*/
-
         public override bool Equals(object obj)
         {
             if (obj is LuaObject)
@@ -654,11 +636,19 @@ namespace NetLua
             }
         }
 
+        /// <summary>
+        /// Calls the object. If this is not a function, it calls the metatable field __call
+        /// </summary>
+        /// <param name="args">The arguments to pass</param>
         public LuaArguments Call(params LuaObject[] args)
         {
             return this.Call(args);
         }
 
+        /// <summary>
+        /// Calls the object. If this is not a function, it calls the metatable field __call
+        /// </summary>
+        /// <param name="args">The arguments to pass</param>
         public LuaArguments Call(LuaArguments args)
         {
             return LuaEvents.call_event(this, args);

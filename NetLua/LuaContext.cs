@@ -5,6 +5,9 @@ using System.Text;
 
 namespace NetLua
 {
+    /// <summary>
+    /// Holds a scope and its variables
+    /// </summary>
     public class LuaContext
     {
         LuaContext parent;
@@ -19,6 +22,9 @@ namespace NetLua
             variables = new Dictionary<string, LuaObject>();
         }
 
+        /// <summary>
+        /// Creates a base context
+        /// </summary>
         public LuaContext() : this(null) { }
 
         /// <summary>
@@ -56,6 +62,9 @@ namespace NetLua
                 return LuaObject.Nil;
         }
 
+        /// <summary>
+        /// Sets the nearest declared variable or creates a new one
+        /// </summary>
         public void Set(string Name, LuaObject Value)
         {
             if (parent == null || variables.ContainsKey(Name))

@@ -7,6 +7,9 @@ namespace NetLua
 {
     static class LuaEvents
     {
+        // This is all based on the Lua 5.2 manual
+        // http://www.lua.org/manual/5.2/manual.html#2.4
+
         public static LuaObject rawget(LuaObject table, LuaObject index)
         {
             if (table.IsTable)
