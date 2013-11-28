@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Netlua by frabert</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Netlua</h1>
+        <p class="header">Completely managed .NET Lua</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/frabert/NetLua/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/frabert/NetLua/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/frabert/NetLua">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/frabert">frabert</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a name="netlua" class="anchor" href="#netlua"><span class="octicon octicon-link"></span></a>NetLua</h1>
+
+<h2>
+<a name="project-description" class="anchor" href="#project-description"><span class="octicon octicon-link"></span></a>Project description</h2>
+
+<p>NetLua is a completely managed interpreter for the Lua dynamic language.
+It was inspired by (and the LuaObject class is loosely based on) AluminumLua
+by Alexander Corrado.
+Check his project out at <a href="http://github.com/chkn/AluminumLua">http://github.com/chkn/AluminumLua</a></p>
+
+<h2>
+<a name="why" class="anchor" href="#why"><span class="octicon octicon-link"></span></a>Why?</h2>
+
+<p>I started this project because I needed a managed Lua interpreter and AluminumLua
+had a few bugs and caveats that were difficult to solve because of its structure.
+I so decided to do my own attempt at it.</p>
+
+<h2>
+<a name="source-code-parsing" class="anchor" href="#source-code-parsing"><span class="octicon octicon-link"></span></a>Source code parsing</h2>
+
+<p>As of now, the parsing is made using Irony, but any LALR parser can be used
+to build the internal AST interpreted by NetLua.
+Irony looks a bit slow, but it is the easiest solution for a neat C# LALR Parser.</p>
+
+<h1>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h1>
+
+<h2>
+<a name="using-lua-from-c" class="anchor" href="#using-lua-from-c"><span class="octicon octicon-link"></span></a>Using Lua from C#</h2>
+
+<div class="highlight highlight-c#"><pre><span class="n">Lua</span> <span class="n">lua</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Lua</span><span class="p">();</span>
+<span class="n">lua</span><span class="p">.</span><span class="n">DoString</span><span class="p">(</span><span class="s">"a={4, b=6, [7]=10}"</span><span class="p">);</span> <span class="c1">// Interpreting Lua</span>
+
+<span class="kt">var</span> <span class="n">a</span> <span class="p">=</span> <span class="n">lua</span><span class="p">.</span><span class="n">Context</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="s">"a"</span><span class="p">);</span> <span class="c1">// Accessing Lua from C#</span>
+<span class="kt">var</span> <span class="n">a_b</span> <span class="p">=</span> <span class="n">a</span><span class="p">[</span><span class="s">"b"</span><span class="p">].</span><span class="n">AsNumber</span><span class="p">();</span>
+
+<span class="kt">double</span> <span class="n">number</span> <span class="p">=</span> <span class="n">a</span><span class="p">[</span><span class="m">7</span><span class="p">];</span> <span class="c1">// Automatic type coercion</span>
+</pre></div>
+
+<h2>
+<a name="registering-c-methods" class="anchor" href="#registering-c-methods"><span class="octicon octicon-link"></span></a>Registering C# methods</h2>
+
+<div class="highlight highlight-c#"><pre><span class="k">static</span> <span class="n">LuaArguments</span> <span class="nf">print</span><span class="p">(</span><span class="n">LuaArguments</span> <span class="n">args</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">string</span><span class="p">[]</span> <span class="n">strings</span> <span class="p">=</span> <span class="n">Array</span><span class="p">.</span><span class="n">ConvertAll</span><span class="p">&lt;</span><span class="n">LuaObject</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;(</span><span class="n">args</span><span class="p">,</span> <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">ToString</span><span class="p">());</span> <span class="c1">// LuaArguments can be used as a LuaObject array</span>
+  <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="s">"\t"</span><span class="p">,</span> <span class="n">strings</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">Lua</span><span class="p">.</span><span class="n">Return</span><span class="p">();</span> <span class="c1">// You can use the Lua.Return helper function to return values</span>
+<span class="p">}</span>
+</pre></div>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
