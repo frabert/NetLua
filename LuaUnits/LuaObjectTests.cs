@@ -43,9 +43,22 @@ namespace LuaUnits
         [Test]
         public static void GeneralEquality()
         {
-            LuaObject a = "ciao";
+            LuaObject a = "test";
 
-            Assert.IsTrue(a == "ciao");
+            Assert.IsTrue(a == "test");
+        }
+
+        [Test]
+        public static void LogicalOperators()
+        {
+            LuaObject a = "test";
+            LuaObject b = LuaObject.Nil;
+
+            Assert.IsTrue((a | b) == a);
+            Assert.IsTrue((a | null) == a);
+
+            Assert.IsTrue((a & b) == b);
+            Assert.IsTrue((a & null) == LuaObject.Nil);
         }
     }
 }

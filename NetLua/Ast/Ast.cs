@@ -71,7 +71,7 @@ namespace NetLua.Ast
     public class FunctionCall : IStatement, IExpression
     {
         public IExpression Function;
-        public List<IExpression> Arguments;
+        public List<IExpression> Arguments = new List<IExpression>();
     }
 
     public class TableAccess : IExpression, IAssignable
@@ -84,7 +84,7 @@ namespace NetLua.Ast
     public class FunctionDefinition : IExpression
     {
         // function(Arguments) Body end
-        public List<Argument> Arguments;
+        public List<Argument> Arguments = new List<Argument>();
         public Block Body;
     }
 
@@ -102,7 +102,7 @@ namespace NetLua.Ast
 
     public class TableConstructor : IExpression
     {
-        public IDictionary<IExpression, IExpression> Values;
+        public Dictionary<IExpression, IExpression> Values = new Dictionary<IExpression,IExpression>();
     }
 
     public class Assignment : IStatement
@@ -111,26 +111,26 @@ namespace NetLua.Ast
         //public Variable[] Variables;
         //public IExpression[] Expressions;
 
-        public IAssignable Variable;
-        public IExpression Expression;
+        public List<IAssignable> Variables = new List<IAssignable>();
+        public List<IExpression> Expressions = new List<IExpression>();
     }
 
     public class Return : IStatement
     {
-        public IExpression Expression;
+        public List<IExpression> Expressions = new List<IExpression>();
     }
 
     public class Break : IStatement { }
 
     public class LocalAssignment : IStatement
     {
-        public string Name;
-        public IExpression Value;
+        public List<string> Names = new List<string>();
+        public List<IExpression> Values = new List<IExpression>();
     }
 
     public class Block : IStatement
     {
-        public List<IStatement> Statements;
+        public List<IStatement> Statements = new List<IStatement>();
     }
 
     public class While : IStatement
@@ -145,11 +145,25 @@ namespace NetLua.Ast
         public IExpression Condition;
     }
 
+    public class NumericFor : IStatement
+    {
+        public IExpression Var, Limit, Step;
+        public string Variable;
+        public Block Block;
+    }
+
+    public class GenericFor : IStatement
+    {
+        public List<string> Variables = new List<string>();
+        public List<IExpression> Expressions = new List<IExpression>();
+        public Block Block;
+    }
+
     public class If : IStatement
     {
         public IExpression Condition;
         public Block Block;
-        public List<If> ElseIfs;
+        public List<If> ElseIfs = new List<If>();
         public Block ElseBlock;
     }
 }

@@ -20,12 +20,12 @@ k = 'x'
 a[k] = 10        
 a[20] = 'great'");
             LuaObject obj1 = 10;
-            LuaObject obj2 = lua.DoString("return a['x']");
+            LuaObject obj2 = lua.DoString("return a['x']")[0];
             Assert.IsTrue(obj1.Equals(obj2));
 
             lua.DoString("k = 20");
             obj1 = "great";
-            obj2 = lua.DoString("return a[k]");
+            obj2 = lua.DoString("return a[k]")[0];
             Assert.IsTrue(obj1.Equals(obj2));
         }
 
@@ -38,12 +38,12 @@ a[20] = 'great'");
 a['x'] = 10        
 b = a");
             LuaObject obj1 = 10;
-            LuaObject obj2 = lua.DoString("return b['x']");
+            LuaObject obj2 = lua.DoString("return b['x']")[0];
             Assert.IsTrue(obj1.Equals(obj2));
 
             lua.DoString("b['x'] = 20");
             obj1 = 20;
-            obj2 = lua.DoString("return a['x']");
+            obj2 = lua.DoString("return a['x']")[0];
             Assert.IsTrue(obj1.Equals(obj2));
         }
     }

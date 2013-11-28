@@ -224,10 +224,32 @@ namespace NetLua
         {
             if (node.Term.Name == "Assignment")
             {
-                Ast.IAssignable left = ParseVariable(node.ChildNodes[0]);
-                Ast.IExpression right = ParseExpression(node.ChildNodes[1]);
+                Ast.Assignment assign = new Ast.Assignment();
 
-                return new Ast.Assignment() { Expression = right, Variable = left };
+                var left = node.ChildNodes[0];
+                var right = node.ChildNodes[1];
+
+                assign.Variables.Add(ParseVariable(left.ChildNodes[0]));
+                assign.Expressions.Add(ParseExpression(right.ChildNodes[0]));
+
+                left = left.ChildNodes[1];
+                right = right.ChildNodes[1];
+
+                while (left.ChildNodes.Count > 0)
+                {
+                    left = left.ChildNodes[0];
+                    assign.Variables.Add(ParseVariable(left.ChildNodes[0]));
+                    left = left.ChildNodes[1];
+                }
+
+                while (right.ChildNodes.Count > 0)
+                {
+                    right = right.ChildNodes[0];
+                    assign.Expressions.Add(ParseExpression(right.ChildNodes[0]));
+                    right = right.ChildNodes[1];
+                }
+
+                return assign;
             }
             throw new Exception("Invalid Assignment node");
         }
@@ -236,14 +258,62 @@ namespace NetLua
         {
             if (node.Term.Name == "LocalAssignment")
             {
-                string left = node.ChildNodes[1].Token.ValueString;
-                Ast.IExpression right;
-                if (node.ChildNodes[2].ChildNodes.Count == 0)
-                    right = new Ast.NilLiteral();
-                else
-                    right = ParseExpression(node.ChildNodes[2].ChildNodes[0]);
+                Ast.LocalAssignment assign = new Ast.LocalAssignment();
 
-                return new Ast.LocalAssignment() { Value = right, Name = left };
+
+                var child = node.ChildNodes[1];
+
+                if (child.ChildNodes[0].Term.Name == "LocalFunction")
+                {
+                    child = child.ChildNodes[0];
+
+                    var argsNode = child.ChildNodes[2];
+                    var blockNode = child.ChildNodes[3];
+
+                    assign.Names.Add(child.ChildNodes[1].Token.ValueString);
+                    var func = new Ast.FunctionDefinition();
+
+                    if (argsNode.ChildNodes.Count > 0)
+                    {
+                        argsNode = argsNode.ChildNodes[0];
+                        while (argsNode.ChildNodes.Count > 0)
+                        {
+                            string ident = argsNode.ChildNodes[0].Token.ValueString;
+                            func.Arguments.Add(new Ast.Argument() { Name = ident });
+                            if (argsNode.ChildNodes.Count == 1)
+                                break;
+                            argsNode = argsNode.ChildNodes[1];
+                        }
+                    }
+
+                    func.Body = ParseBlock(blockNode);
+
+                    assign.Values.Add(func);
+                    return assign;
+                }
+
+                var left = child.ChildNodes[0];
+                var right = child.ChildNodes[1];
+
+                assign.Names.Add(left.ChildNodes[0].Token.ValueString);
+
+                left = left.ChildNodes[1];
+
+                while (left.ChildNodes.Count > 0)
+                {
+                    left = left.ChildNodes[0];
+                    assign.Names.Add(left.ChildNodes[0].Token.ValueString);
+                    left = left.ChildNodes[1];
+                }
+
+                while (right.ChildNodes.Count > 0)
+                {
+                    right = right.ChildNodes[0];
+                    assign.Values.Add(ParseExpression(right.ChildNodes[0]));
+                    right = right.ChildNodes[1];
+                }
+
+                return assign;
             }
             throw new Exception("Invalid LocalAssignment node");
         }
@@ -252,7 +322,15 @@ namespace NetLua
         {
             if (node.Term.Name == "ReturnStat")
             {
-                return new Ast.Return() { Expression = ParseExpression(node.ChildNodes[1]) };
+                Ast.Return ret = new Ast.Return();
+                var child = node.ChildNodes[1];
+                while (child.ChildNodes.Count > 0)
+                {
+                    child = child.ChildNodes[0];
+                    ret.Expressions.Add(ParseExpression(child.ChildNodes[0]));
+                    child = child.ChildNodes[1];
+                }
+                return ret;
             }
             throw new Exception("Invalid ReturnStat node");
         }
@@ -356,7 +434,10 @@ namespace NetLua
                         argsNode = argsNode.ChildNodes[1];
                     }
                 }
-                return new Ast.Assignment() { Expression = def, Variable = expr };
+                Ast.Assignment assign = new Ast.Assignment();
+                assign.Variables.Add(expr);
+                assign.Expressions.Add(def);
+                return assign;
             }
             throw new Exception("Invalid FunctionDecl node");
         }
@@ -599,11 +680,43 @@ namespace NetLua
                         block.Statements.Add(ParseRepeat(child)); break;
                     case "FunctionDecl":
                         block.Statements.Add(ParseFunctionDecl(child)); break;
+                    case "For":
+                        block.Statements.Add(ParseFor(child)); break;
                     default:
                         throw new NotImplementedException("Node not yet implemented");
                 }
             }
             return block;
+        }
+
+        Ast.IStatement ParseFor(ParseTreeNode node)
+        {
+            if (node.Term.Name == "For")
+            {
+                var block = ParseDoBlock(node.ChildNodes[2]);
+                var type = node.ChildNodes[1].ChildNodes[0];
+                if (type.Term.Name == "NumericFor")
+                {
+                    var cycle = new Ast.NumericFor();
+                    cycle.Block = block;
+                    cycle.Variable = type.ChildNodes[0].Token.ValueString;
+                    cycle.Var = ParseExpression(type.ChildNodes[1]);
+                    cycle.Limit = ParseExpression(type.ChildNodes[2]);
+                    cycle.Step = new Ast.NumberLiteral() { Value = 1 };
+                    if (type.ChildNodes[3].ChildNodes.Count > 0)
+                    {
+                        var child = type.ChildNodes[3].ChildNodes[0];
+                        cycle.Step = ParseExpression(child);
+                    }
+
+                    return cycle;
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            throw new Exception("Invalid For node");
         }
     }
 
@@ -650,6 +763,7 @@ namespace NetLua
             NonTerminal Else = new NonTerminal("Else");
             NonTerminal While = new NonTerminal("While");
             NonTerminal Repeat = new NonTerminal("Repeat");
+            NonTerminal For = new NonTerminal("For");
 
             NonTerminal PowerOp = new NonTerminal("PowerOp");
             NonTerminal MulOp = new NonTerminal("MulOp");
@@ -722,13 +836,26 @@ namespace NetLua
             #region Statements
             FunctionDecl.Rule = "function" + Variable + DefArguments + Chunk + "end";
 
+
+            var RetChunk = new NonTerminal("RetChunk");
+            RetChunk.Rule = Expression + (("," + RetChunk) | Empty);
+
             ReturnStatement.Rule =
-                "return" + Expression;
+                "return" + (RetChunk | Empty);
+
+            var AssignExpChunk = new NonTerminal("AssignExpChunk");
+            AssignExpChunk.Rule = Expression + (("," + AssignExpChunk) | Empty);
+            var AssignVarChunk = new NonTerminal("AssignVarChunk");
+            AssignVarChunk.Rule = Variable + (("," + AssignVarChunk) | Empty);
 
             Assignment.Rule =
-                Variable + "=" + Expression;
+                AssignVarChunk + "=" + AssignExpChunk;
 
-            LocalAssignment.Rule = "local" + Identifier + ("=" + Expression | Empty);
+            var LocalAssignNameChunk = new NonTerminal("AssignNameChunk");
+            var LocalFunction = new NonTerminal("LocalFunction");
+            LocalAssignNameChunk.Rule = Identifier + (("," + LocalAssignNameChunk) | Empty);
+            LocalFunction.Rule = "function" + Identifier + DefArguments + Chunk + "end";
+            LocalAssignment.Rule = "local" + (LocalAssignNameChunk + ("=" + AssignExpChunk | Empty) | LocalFunction);
 
             Elseif.Rule = "elseif" + Expression + "then" + Chunk + (Elseif | Empty);
             Else.Rule = "else" + Chunk;
@@ -743,6 +870,17 @@ namespace NetLua
 
             BreakStatement.Rule = "break";
 
+            var NumericFor = new NonTerminal("NumericFor");
+            NumericFor.Rule = Identifier + "=" + Expression + "," + Expression + ("," + Expression | Empty);
+            var GenericFor = new NonTerminal("GenericFor");
+            var NameList = new NonTerminal("NameList");
+            var ExpList = new NonTerminal("ExpList");
+            NameList.Rule = Identifier + ("," + NameList | Empty);
+            ExpList.Rule = Expression + ("," + ExpList | Empty);
+            GenericFor.Rule = NameList + "in" + ExpList;
+
+            For.Rule = "for" + (NumericFor | GenericFor) + DoBlock;
+
             Statement.Rule =
                 ReturnStatement
                 | BreakStatement
@@ -750,6 +888,7 @@ namespace NetLua
                 | LocalAssignment
                 | FunctionCall
                 | FunctionDecl
+                | For
                 | If
                 | While
                 | DoBlock
