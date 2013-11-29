@@ -26,6 +26,11 @@ namespace LuaTest
             lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
             lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
 
+            MathLibrary.AddMathLibrary(lua.Context);
+            dynamic math = lua.Context.Get("math");
+
+            double d = math.sin(Math.PI);
+
             while (true)
             {
                 lua.DoString(Console.ReadLine());
