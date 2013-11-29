@@ -116,8 +116,8 @@ namespace NetLua
     /// </summary>
     public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
     {
-        private object luaobj;
-        private LuaType type;
+        protected object luaobj;
+        protected LuaType type;
         private LuaObject metatable = Nil;
 
         public LuaObject()
@@ -642,7 +642,7 @@ namespace NetLua
         /// <param name="args">The arguments to pass</param>
         public LuaArguments Call(params LuaObject[] args)
         {
-            return this.Call(args);
+            return this.Call(new LuaArguments(args));
         }
 
         /// <summary>
