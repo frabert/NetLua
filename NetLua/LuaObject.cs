@@ -660,6 +660,11 @@ namespace NetLua
         }
 
         #region Dynamic object
+
+        /// <summary>
+        /// Gets a standard .NET value froma LuaObject
+        /// </summary>
+        /// <returns>The LuaObject is <paramref name="a"/> is a function or a table, its underlying luaobj if not</returns>
         static object getObject(LuaObject a)
         {
             if (a.Type != LuaType.table && a.Type != LuaType.function)
