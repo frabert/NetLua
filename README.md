@@ -49,4 +49,7 @@ static LuaArguments print(LuaArguments args)
   Console.WriteLine(String.Join("\t", strings));
   return Lua.Return(); // You can use the Lua.Return helper function to return values
 }
+
+Lua lua = new Lua();
+lua.Context.SetGlobal("print", (LuaFunction)print);
 ```
