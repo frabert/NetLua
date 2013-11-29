@@ -491,6 +491,9 @@ namespace NetLua
 
         public static bool operator ==(LuaObject a, object b)
         {
+            if (b == null)
+                return LuaObject.FromObject(a).IsNil;
+
             if (a.IsNil)
             {
                 if (b == null)

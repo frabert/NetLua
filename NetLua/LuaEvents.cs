@@ -333,7 +333,7 @@ namespace NetLua
                 }
                 else
                 {
-                    throw new LuaException("Invalid op");
+                    throw new LuaException("Cannot call nonfunction");
                 }
             }
         }
