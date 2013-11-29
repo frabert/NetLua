@@ -7,14 +7,6 @@ using NetLua;
 
 namespace LuaTest
 {
-    class TestObj
-    {
-        public double TestMethod()
-        {
-            return 10;
-        }
-    }
-
     class Program
     {
         static LuaArguments print(LuaArguments args)
