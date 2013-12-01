@@ -1,8 +1,6 @@
 NetLua
 ======
 
-\[ For dynamic objects support, see the [dynamic branch](https://github.com/frabert/NetLua/tree/dynamic) \]
-
 Project description
 -------------------
 
