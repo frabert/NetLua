@@ -55,3 +55,15 @@ static LuaArguments print(LuaArguments args)
 Lua lua = new Lua();
 lua.Context.SetGlobal("print", (LuaFunction)print);
 ```
+
+Using .NET 4.0 dynamic features
+-------------------------------
+
+```c#
+
+Lua lua = new Lua();
+dynamic luaVariable = lua.Context.Get("var");
+
+double a = luaVariable.numberValue; // Automatic type casting
+double d = luaVariable.someFunc(a); // Automatic function arguments and result boxing / unboxing
+```

@@ -26,6 +26,8 @@ namespace LuaTest
             lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
             lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
 
+            MathLibrary.AddMathLibrary(lua.Context);
+
             while (true)
             {
                 lua.DoString(Console.ReadLine());

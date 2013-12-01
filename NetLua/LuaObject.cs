@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
+using System.Dynamic;
+
 namespace NetLua
 {
     using LuaTable = IDictionary<LuaObject, LuaObject>;
@@ -114,7 +116,7 @@ namespace NetLua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject : IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
+    public class LuaObject : DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
     {
         protected object luaobj;
         protected LuaType type;
@@ -656,5 +658,77 @@ namespace NetLua
         {
             return LuaEvents.call_event(this, args);
         }
+
+        #region Dynamic object
+
+        /// <summary>
+        /// Gets a standard .NET value froma LuaObject
+        /// </summary>
+        /// <returns>The LuaObject is <paramref name="a"/> is a function or a table, its underlying luaobj if not</returns>
+        static object getObject(LuaObject a)
+        {
+            if (a.Type != LuaType.table && a.Type != LuaType.function)
+            {
+                return a.luaobj;
+            }
+            else
+            {
+                return a;
+            }
+        }
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            result = null;
+            LuaObject obj = this[binder.Name];
+            if (obj.IsNil)
+            {
+                return false;
+            }
+            else
+            {
+                result = getObject(obj);
+                return true;
+            }
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            if (value is LuaObject)
+            {
+                this[binder.Name] = (LuaObject)value;
+            }
+            else
+            {
+                this[binder.Name] = LuaObject.FromObject(value);
+            }
+            return true;
+        }
+
+        public override bool TryInvoke(InvokeBinder binder, object[] args, out object result)
+        {
+            LuaObject[] passingArgs = Array.ConvertAll<object, LuaObject>(args,
+                x => (x is LuaObject ? (LuaObject)x : LuaObject.FromObject(x)));
+            LuaArguments ret = this.Call(passingArgs);
+            if (ret.Length == 1)
+            {
+                if (ret[0].IsNil)
+                {
+                    result = null;
+                }
+                else
+                {
+                    result = getObject(ret[0]);
+                }
+                return true;
+            }
+            else
+            {
+                object[] res = Array.ConvertAll<LuaObject, object>(ret.ToArray(), x => getObject(x));
+                result = res;
+                return true;
+            }
+        }
+        #endregion
     }
 }
