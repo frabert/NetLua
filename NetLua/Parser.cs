@@ -202,7 +202,18 @@ namespace NetLua
                 call.Arguments = new List<Ast.IExpression>();
                 call.Function = expr;
 
-                var root = node.ChildNodes[1].ChildNodes[0];
+                var name = node.ChildNodes[1];
+                if (name.ChildNodes.Count > 0)
+                {
+                    call.Arguments.Add(expr);
+                    call.Function = new Ast.Variable()
+                    {
+                        Name = name.ChildNodes[1].Token.ValueString,
+                        Prefix = expr
+                    };
+                }
+
+                var root = node.ChildNodes[2].ChildNodes[0];
                 if (root.ChildNodes.Count != 0)
                 {
                     root = root.ChildNodes[0];
@@ -415,13 +426,25 @@ namespace NetLua
             if (node.Term.Name == "FunctionDecl")
             {
                 Ast.IAssignable expr = ParseVariable(node.ChildNodes[1]);
-                ParseTreeNode argsNode = node.ChildNodes[2].ChildNodes[0];
-                ParseTreeNode chunkNode = node.ChildNodes[3];
+
+                ParseTreeNode argsNode = node.ChildNodes[3].ChildNodes[0];
+                ParseTreeNode chunkNode = node.ChildNodes[4];
 
                 Ast.Block block = ParseBlock(chunkNode);
                 Ast.FunctionDefinition def = new Ast.FunctionDefinition();
-                def.Body = block;
                 def.Arguments = new List<Ast.Argument>();
+
+                var nameNode = node.ChildNodes[2];
+                if (nameNode.ChildNodes.Count > 0)
+                {
+                    def.Arguments.Add(new Ast.Argument() { Name = "self" });
+                    expr = new Ast.Variable()
+                    {
+                        Name = nameNode.ChildNodes[1].Token.ValueString,
+                        Prefix = expr
+                    };
+                }
+                def.Body = block;
                 if (argsNode.ChildNodes.Count > 0)
                 {
                     argsNode = argsNode.ChildNodes[0];
@@ -810,7 +833,7 @@ namespace NetLua
                 | Prefix + "[" + Expression + "]"
                 | Identifier;
 
-            FunctionCall.Rule = Prefix + CallArguments;
+            FunctionCall.Rule = Prefix + (":" + Identifier | Empty) + CallArguments;
 
             FunctionDef.Rule =
                 ToTerm("function") + DefArguments
@@ -834,7 +857,7 @@ namespace NetLua
             #endregion
 
             #region Statements
-            FunctionDecl.Rule = "function" + Variable + DefArguments + Chunk + "end";
+            FunctionDecl.Rule = "function" + Variable + (":" + Identifier | Empty) + DefArguments + Chunk + "end";
 
 
             var RetChunk = new NonTerminal("RetChunk");

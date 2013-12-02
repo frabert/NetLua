@@ -28,6 +28,9 @@ namespace LuaTest
 
             MathLibrary.AddMathLibrary(lua.Context);
 
+            dynamic a = lua.Context.Get("math");
+            a.testVar = 5;
+
             while (true)
             {
                 lua.DoString(Console.ReadLine());
