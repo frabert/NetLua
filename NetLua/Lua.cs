@@ -79,6 +79,17 @@ namespace NetLua
             }
         }
 
+        /// <summary>
+        /// The base context
+        /// </summary>
+        public dynamic DynamicContext
+        {
+            get
+            {
+                return ctx;
+            }
+        }
+
         #region Basic functions
 
         LuaArguments assert(LuaArguments args)

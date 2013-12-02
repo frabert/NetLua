@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.Dynamic;
+
 namespace NetLua
 {
     /// <summary>
     /// Holds a scope and its variables
     /// </summary>
-    public class LuaContext
+    public class LuaContext : DynamicObject
     {
         LuaContext parent;
         Dictionary<string, LuaObject> variables;
@@ -76,5 +78,21 @@ namespace NetLua
                 parent.Set(Name, Value);
             }
         }
+
+        #region DynamicObject
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            result = Get(binder.Name);
+            if (result == LuaObject.Nil)
+                return false;
+            return true;
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            Set(binder.Name, LuaObject.FromObject(value));
+            return true;
+        }
+        #endregion
     }
 }
