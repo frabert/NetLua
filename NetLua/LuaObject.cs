@@ -59,14 +59,14 @@ namespace NetLua
         {
             get
             {
-                if (Index > list.Count)
-                    return LuaObject.Nil;
-                else
+                if (Index < list.Count)
                     return list[Index];
+                else
+                    return LuaObject.Nil;
             }
             set
             {
-                if (Index > list.Count)
+                if (Index < list.Count)
                     list[Index] = value;
             }
         }
