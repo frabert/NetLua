@@ -40,7 +40,7 @@ double number = a[7]; // Automatic type coercion
 ```
 
 Registering C# methods
------------------
+----------------------
 
 ```c#
 static LuaArguments print(LuaArguments args)
@@ -58,10 +58,11 @@ Using .NET 4.0 dynamic features
 -------------------------------
 
 ```c#
-
 Lua lua = new Lua();
-dynamic luaVariable = lua.Context.Get("var");
+dynamic luaVariable = lua.DynamicContext.var; // Lua.DynamicContext provides a dynamic version of Lua.Context
 
 double a = luaVariable.numberValue; // Automatic type casting
 double d = luaVariable.someFunc(a); // Automatic function arguments and result boxing / unboxing
+
+lua.DynamicContext.x = 5;
 ```
