@@ -1,36 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Netlua by frabert</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <title>Netlua by frabert</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1 class="header">Netlua</h1>
-        <p class="header">Completely managed .NET Lua</p>
+    <header>
+      <div class="inner">
+        <h1>Netlua</h1>
+        <h2>Completely managed .NET Lua</h2>
+        <a href="https://github.com/frabert/NetLua" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
 
-        <ul>
-          <li class="download"><a class="buttons" href="https://github.com/frabert/NetLua/zipball/master">Download ZIP</a></li>
-          <li class="download"><a class="buttons" href="https://github.com/frabert/NetLua/tarball/master">Download TAR</a></li>
-          <li><a class="buttons github" href="https://github.com/frabert/NetLua">View On GitHub</a></li>
-        </ul>
-
-        <p class="header">This project is maintained by <a class="header name" href="https://github.com/frabert">frabert</a></p>
-
-
-      </header>
-      <section>
-        <h1>
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
 <a name="netlua" class="anchor" href="#netlua"><span class="octicon octicon-link"></span></a>NetLua</h1>
 
 <h2>
@@ -79,13 +77,41 @@ Irony looks a bit slow, but it is the easiest solution for a neat C# LALR Parser
   <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="s">"\t"</span><span class="p">,</span> <span class="n">strings</span><span class="p">));</span>
   <span class="k">return</span> <span class="n">Lua</span><span class="p">.</span><span class="n">Return</span><span class="p">();</span> <span class="c1">// You can use the Lua.Return helper function to return values</span>
 <span class="p">}</span>
+
+<span class="n">Lua</span> <span class="n">lua</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Lua</span><span class="p">();</span>
+<span class="n">lua</span><span class="p">.</span><span class="n">Context</span><span class="p">.</span><span class="n">SetGlobal</span><span class="p">(</span><span class="s">"print"</span><span class="p">,</span> <span class="p">(</span><span class="n">LuaFunction</span><span class="p">)</span><span class="n">print</span><span class="p">);</span>
 </pre></div>
-      </section>
-      <footer>
-        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
-      </footer>
+
+<h2>
+<a name="using-net-40-dynamic-features" class="anchor" href="#using-net-40-dynamic-features"><span class="octicon octicon-link"></span></a>Using .NET 4.0 dynamic features</h2>
+
+<div class="highlight highlight-c#"><pre><span class="n">Lua</span> <span class="n">lua</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Lua</span><span class="p">();</span>
+<span class="kt">dynamic</span> <span class="n">luaVariable</span> <span class="p">=</span> <span class="n">lua</span><span class="p">.</span><span class="n">DynamicContext</span><span class="p">.</span><span class="kt">var</span><span class="p">;</span> <span class="c1">// Lua.DynamicContext provides a dynamic version of Lua.Context</span>
+
+<span class="kt">double</span> <span class="n">a</span> <span class="p">=</span> <span class="n">luaVariable</span><span class="p">.</span><span class="n">numberValue</span><span class="p">;</span> <span class="c1">// Automatic type casting</span>
+<span class="kt">double</span> <span class="n">d</span> <span class="p">=</span> <span class="n">luaVariable</span><span class="p">.</span><span class="n">someFunc</span><span class="p">(</span><span class="n">a</span><span class="p">);</span> <span class="c1">// Automatic function arguments and result boxing / unboxing</span>
+
+<span class="n">lua</span><span class="p">.</span><span class="n">DynamicContext</span><span class="p">.</span><span class="n">x</span> <span class="p">=</span> <span class="m">5</span><span class="p">;</span>
+</pre></div>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/frabert/NetLua/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/frabert/NetLua/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/frabert/NetLua"></a> is maintained by <a href="https://github.com/frabert">frabert</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-		
+
+  
   </body>
 </html>
