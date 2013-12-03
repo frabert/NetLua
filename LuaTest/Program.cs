@@ -35,7 +35,13 @@ namespace LuaTest
         static LuaArguments print(LuaArguments args)
         {
             Console.WriteLine(String.Join("\t", Array.ConvertAll<LuaObject, string>(args, x=>x.ToString())));
-            return Lua.Return(LuaObject.Nil);
+            return Lua.Return();
+        }
+
+        static LuaArguments io_write(LuaArguments args)
+        {
+            Console.Write(args[0].ToString());
+            return Lua.Return();
         }
 
         static LuaArguments read(LuaArguments args)
@@ -46,8 +52,8 @@ namespace LuaTest
         static void Main(string[] args)
         {
             Lua lua = new Lua();
-            lua.Context.SetGlobal("print", LuaObject.FromFunction(print));
-            lua.Context.SetGlobal("read", LuaObject.FromFunction(read));
+            lua.DynamicContext.print = (LuaFunction)print;
+            lua.DynamicContext.read = (LuaFunction)read;
 
             MathLibrary.AddMathLibrary(lua.Context);
 

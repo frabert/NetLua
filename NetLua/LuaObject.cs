@@ -200,7 +200,7 @@ namespace NetLua
         /// <summary>
         /// Gets the underlying Lua type
         /// </summary>
-        public LuaType Type { get { return type; } }
+        public LuaType Type { get { return type; } internal set { type = value; } }
 
         /// <summary>
         /// Checks whether the type matches or not
