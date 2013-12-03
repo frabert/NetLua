@@ -48,6 +48,8 @@ namespace NetLua
             ctx.Set("tostring", (LuaFunction)tostring);
             ctx.Set("type", (LuaFunction)type);
             ctx.Set("ipairs", (LuaFunction)ipairs);
+            ctx.Set("next", (LuaFunction)next);
+            ctx.Set("pairs", (LuaFunction)pairs);
         }
 
         /// <summary>
@@ -232,16 +234,58 @@ namespace NetLua
 
                         var val = s[var];
                         if (val == LuaObject.Nil)
-                            return Lua.Return(LuaObject.Nil);
+                            return Return(LuaObject.Nil);
                         else
-                            return Lua.Return(var, val);
+                            return Return(var, val);
                     };
-                    return Lua.Return(f, args[0], 0);
+                    return Return(f, args[0], 0);
                 }
                 else
                 {
                     throw new LuaException("t must be a table");
                 }
+            }
+        }
+
+        LuaArguments next(LuaArguments args)
+        {
+            var table = args[0];
+            var index = args[1];
+            if (!table.IsTable)
+            {
+                throw new LuaException("t must be a table");
+            }
+            List<LuaObject> keys = new List<LuaObject>(table.AsTable().Keys);
+            if (index.IsNil)
+            {
+                if (keys.Count == 0)
+                    return Return();
+                return Return(keys[0], table[keys[0]]);
+            }
+            else
+            {
+                int pos = keys.IndexOf(index);
+                if (pos == keys.Count - 1)
+                {
+                    return Return();
+                }
+                else
+                {
+                    return Return(keys[pos + 1], table[keys[pos + 1]]);
+                }
+            }
+        }
+
+        LuaArguments pairs(LuaArguments args)
+        {
+            LuaObject handler = LuaEvents.getMetamethod(args[0], "__pairs");
+            if (!handler.IsNil)
+            {
+                return handler.Call(args);
+            }
+            else
+            {
+                return Return((LuaFunction)next, args[0], LuaObject.Nil);
             }
         }
 
