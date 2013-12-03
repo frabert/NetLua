@@ -138,12 +138,12 @@ namespace NetLua.Ast
         public List<IExpression> Expressions = new List<IExpression>();
     }
 
-    public class Return : IStatement
+    public class ReturnStat : IStatement
     {
         public List<IExpression> Expressions = new List<IExpression>();
     }
 
-    public class Break : IStatement { }
+    public class BreakStat : IStatement { }
 
     public class LocalAssignment : IStatement
     {
@@ -156,13 +156,13 @@ namespace NetLua.Ast
         public List<IStatement> Statements = new List<IStatement>();
     }
 
-    public class While : IStatement
+    public class WhileStat : IStatement
     {
         public IExpression Condition;
         public Block Block;
     }
 
-    public class Repeat : IStatement
+    public class RepeatStat : IStatement
     {
         public Block Block;
         public IExpression Condition;
@@ -182,11 +182,11 @@ namespace NetLua.Ast
         public Block Block;
     }
 
-    public class If : IStatement
+    public class IfStat : IStatement
     {
         public IExpression Condition;
         public Block Block;
-        public List<If> ElseIfs = new List<If>();
+        public List<IfStat> ElseIfs = new List<IfStat>();
         public Block ElseBlock;
     }
 }

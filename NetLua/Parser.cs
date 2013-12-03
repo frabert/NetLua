@@ -388,11 +388,11 @@ namespace NetLua
             throw new Exception("Invalid LocalAssignment node");
         }
 
-        Ast.Return ParseReturnStat(ParseTreeNode node)
+        Ast.ReturnStat ParseReturnStat(ParseTreeNode node)
         {
             if (node.Term.Name == "ReturnStat")
             {
-                Ast.Return ret = new Ast.Return();
+                Ast.ReturnStat ret = new Ast.ReturnStat();
                 var child = node.ChildNodes[1];
                 while (child.ChildNodes.Count > 0)
                 {
@@ -414,14 +414,14 @@ namespace NetLua
             throw new Exception("Invalid DoBlock node");
         }
 
-        Ast.Repeat ParseRepeat(ParseTreeNode node)
+        Ast.RepeatStat ParseRepeat(ParseTreeNode node)
         {
             if (node.Term.Name == "Repeat")
             {
                 Ast.Block block = ParseBlock(node.ChildNodes[1]);
                 Ast.IExpression condition = ParseExpression(node.ChildNodes[3]);
 
-                return new Ast.Repeat()
+                return new Ast.RepeatStat()
                 {
                     Block = block,
                     Condition = condition
@@ -430,11 +430,11 @@ namespace NetLua
             throw new Exception("Invalid Repeat node");
         }
 
-        Ast.While ParseWhile(ParseTreeNode node)
+        Ast.WhileStat ParseWhile(ParseTreeNode node)
         {
             if (node.Term.Name == "While")
             {
-                return new Ast.While()
+                return new Ast.WhileStat()
                 {
                     Condition = ParseExpression(node.ChildNodes[1]),
                     Block = ParseDoBlock(node.ChildNodes[2])
@@ -443,17 +443,17 @@ namespace NetLua
             throw new Exception("Invalid While node");
         }
 
-        Ast.If ParseIf(ParseTreeNode node)
+        Ast.IfStat ParseIf(ParseTreeNode node)
         {
             if (node.Term.Name == "If")
             {
                 Ast.IExpression condition = ParseExpression(node.ChildNodes[1]);
                 Ast.Block block = ParseBlock(node.ChildNodes[3]);
 
-                Ast.If If = new Ast.If();
+                Ast.IfStat If = new Ast.IfStat();
                 If.Block = block;
                 If.Condition = condition;
-                If.ElseIfs = new List<Ast.If>();
+                If.ElseIfs = new List<Ast.IfStat>();
 
                 ParseTreeNode ElseifNode = node.ChildNodes[4];
                 ParseTreeNode ElseNode = node.ChildNodes[5];
@@ -461,7 +461,7 @@ namespace NetLua
                 while (ElseifNode.ChildNodes.Count != 0)
                 {
                     var childnode = ElseifNode.ChildNodes[0];
-                    Ast.If elseif = new Ast.If();
+                    Ast.IfStat elseif = new Ast.IfStat();
                     elseif.Condition = ParseExpression(childnode.ChildNodes[1]);
                     elseif.Block = ParseBlock(childnode.ChildNodes[3]);
 
@@ -759,7 +759,7 @@ namespace NetLua
                     case "ReturnStat":
                         block.Statements.Add(ParseReturnStat(child)); break;
                     case "BreakStat":
-                        block.Statements.Add(new Ast.Break()); break;
+                        block.Statements.Add(new Ast.BreakStat()); break;
                     case "DoBlock":
                         block.Statements.Add(ParseDoBlock(child)); break;
                     case "If":

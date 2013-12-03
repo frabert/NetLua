@@ -220,7 +220,7 @@ namespace NetLua
             return obj;
         }
 
-        static LuaArguments EvalIf(If stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalIf(IfStat stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.broke = false;
             returned.returned = false;
@@ -234,7 +234,7 @@ namespace NetLua
             else
             {
                 bool found = false;
-                foreach (If branch in stat.ElseIfs)
+                foreach (IfStat branch in stat.ElseIfs)
                 {
                     if (EvalExpression(branch.Condition, Context)[0].AsBool())
                     {
@@ -254,7 +254,7 @@ namespace NetLua
             return obj;
         }
 
-        static LuaArguments EvalWhile(While stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalWhile(WhileStat stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.returned = false;
             returned.broke = false;
@@ -273,7 +273,7 @@ namespace NetLua
             return Lua.Return();
         }
 
-        static LuaArguments EvalRepeat(Repeat stat, LuaContext Context, out LuaReturnStatus returned)
+        static LuaArguments EvalRepeat(RepeatStat stat, LuaContext Context, out LuaReturnStatus returned)
         {
             returned.returned = false;
             returned.broke = false;
@@ -421,9 +421,9 @@ namespace NetLua
                         Context.SetLocal(assign.Names[i], values[i]);
                     }
                 }
-                else if (stat is Return)
+                else if (stat is ReturnStat)
                 {
-                    Return ret = stat as Return;
+                    ReturnStat ret = stat as ReturnStat;
                     returned.returned = true;
                     List<LuaObject> values = new List<LuaObject>();
                     foreach (IExpression expr in ret.Expressions)
@@ -445,25 +445,25 @@ namespace NetLua
                     if (returned.returned)
                         return obj;
                 }
-                else if (stat is If)
+                else if (stat is IfStat)
                 {
-                    obj = EvalIf(stat as If, Context, out returned);
+                    obj = EvalIf(stat as IfStat, Context, out returned);
                     if (returned.returned)
                         return obj;
                 }
-                else if (stat is While)
+                else if (stat is WhileStat)
                 {
-                    obj = EvalWhile(stat as While, Context, out returned);
+                    obj = EvalWhile(stat as WhileStat, Context, out returned);
                     if (returned.returned)
                         return obj;
                 }
-                else if (stat is Repeat)
+                else if (stat is RepeatStat)
                 {
-                    obj = EvalRepeat(stat as Repeat, Context, out returned);
+                    obj = EvalRepeat(stat as RepeatStat, Context, out returned);
                     if (returned.returned)
                         return obj;
                 }
-                else if (stat is Break)
+                else if (stat is BreakStat)
                 {
                     returned.returned = false;
                     returned.broke = true;
