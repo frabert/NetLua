@@ -108,7 +108,7 @@ namespace NetLua
             if (node.Term.Name == "RelOp")
             {
                 ParseTreeNode left = node.ChildNodes[0];
-                Ast.IExpression lexpr = ParseAddOp(left);
+                Ast.IExpression lexpr = ParseConcatOp(left);
                 if (node.ChildNodes[1].ChildNodes.Count == 0)
                     return lexpr;
                 string opstring = node.ChildNodes[1].ChildNodes[0].ChildNodes[0].Token.ValueString;
@@ -132,11 +132,30 @@ namespace NetLua
                 }
 
                 ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
-                Ast.IExpression rexpr = ParseAddOp(right);
+                Ast.IExpression rexpr = ParseConcatOp(right);
 
                 return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
             }
             throw new Exception("Invalid RelOp node");
+        }
+
+        Ast.IExpression ParseConcatOp(ParseTreeNode node)
+        {
+            if (node.Term.Name == "ConcatOp")
+            {
+                ParseTreeNode left = node.ChildNodes[0];
+                Ast.IExpression lexpr = ParseAddOp(left);
+                if (node.ChildNodes[1].ChildNodes.Count == 0)
+                    return lexpr;
+                string opstring = node.ChildNodes[1].ChildNodes[0].Token.ValueString;
+                Ast.BinaryOp op = Ast.BinaryOp.Concat;
+
+                ParseTreeNode right = node.ChildNodes[1].ChildNodes[1];
+                Ast.IExpression rexpr = ParseAddOp(right);
+
+                return new Ast.BinaryExpression() { Left = lexpr, Right = rexpr, Operation = op };
+            }
+            throw new Exception("Invalid ConcatOp node");
         }
 
         Ast.IExpression ParseAddOp(ParseTreeNode node)
@@ -755,6 +774,8 @@ namespace NetLua
                         block.Statements.Add(ParseFor(child)); break;
                     case "OopCall":
                         block.Statements.Add(ParseOopCall(child)); break;
+                    case ";":
+                        break;
                     default:
                         throw new NotImplementedException("Node not yet implemented");
                 }

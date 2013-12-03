@@ -106,7 +106,8 @@ namespace NetLua
             PowerOp.Rule = Expression + ("^" + Expression | Empty);
             MulOp.Rule = PowerOp + ((ToTerm("*") | "/" | "%") + PowerOp | Empty);
             AddOp.Rule = MulOp + ((ToTerm("+") | "-") + MulOp | Empty);
-            RelOp.Rule = AddOp + ((ToTerm(">") | ">=" | "<" | "<=" | "==" | "~=") + AddOp | Empty);
+            ConcatOp.Rule = AddOp + (".." + AddOp | Empty);
+            RelOp.Rule = ConcatOp + ((ToTerm(">") | ">=" | "<" | "<=" | "==" | "~=") + ConcatOp | Empty);
             AndOp.Rule = RelOp + ("and" + RelOp | Empty);
             OrOp.Rule = AndOp + ("or" + AndOp | Empty);
 
@@ -130,6 +131,8 @@ namespace NetLua
                 ToTerm("function") + DefArguments
                 + Chunk + ToTerm("end");
 
+            var tableSep = new NonTerminal("");
+            tableSep.Rule = ToTerm(";") | ",";
             TableConstructFragment.Rule = ((ToTerm("[") + Expression + "]" + "=" | Identifier + "=" | Empty) + Expression) + ("," + TableConstructFragment | Empty) | Empty;
             TableConstruct.Rule = "{" + TableConstructFragment + "}";
 
@@ -196,7 +199,8 @@ namespace NetLua
             For.Rule = "for" + (GenericFor | NumericFor) + DoBlock;
 
             Statement.Rule =
-                ReturnStatement
+                ";"
+                | ReturnStatement
                 | BreakStatement
                 | Assignment
                 | LocalAssignment
