@@ -454,7 +454,9 @@ namespace NetLua
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    obj = EvalGenericFor(stat as GenericFor, Context, out returned);
+                    if (returned.returned)
+                        return obj;
                 }
             }
 

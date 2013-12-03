@@ -763,8 +763,35 @@ namespace NetLua
                 }
                 else
                 {
-                    //TODO: Implement generic for
-                    throw new NotImplementedException();
+                    var cycle = new Ast.GenericFor();
+                    cycle.Block = block;
+
+                    var nameList = type.ChildNodes[0];
+                    var exprList = type.ChildNodes[2];
+
+                    while (true)
+                    {
+                        var name = nameList.ChildNodes[0].Token.ValueString;
+                        cycle.Variables.Add(name);
+                        var child = nameList.ChildNodes[1];
+                        if (child.ChildNodes.Count > 0)
+                            nameList = child.ChildNodes[0];
+                        else
+                            break;
+                    }
+
+                    while (true)
+                    {
+                        var expr = ParseExpression(exprList.ChildNodes[0]);
+                        cycle.Expressions.Add(expr);
+                        var child = exprList.ChildNodes[1];
+                        if (child.ChildNodes.Count > 0)
+                            exprList = child.ChildNodes[0];
+                        else
+                            break;
+                    }
+
+                    return cycle;
                 }
             }
             throw new Exception("Invalid For node");
