@@ -36,7 +36,7 @@ namespace NetLua
         Parser p = new Parser();
 
         /// <summary>
-        /// Helper function for return Nil from a function
+        /// Helper function for returning Nil from a function
         /// </summary>
         /// <returns>Nil</returns>
         public static LuaArguments Return()

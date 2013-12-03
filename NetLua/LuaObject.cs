@@ -687,7 +687,7 @@ namespace NetLua
             return LuaEvents.call_event(this, args);
         }
 
-        #region Dynamic object
+        #region DynamicObject
 
         /// <summary>
         /// Gets a standard .NET value froma LuaObject
