@@ -515,7 +515,12 @@ namespace NetLua
                 else
                 {
                     if (b is LuaObject)
+                    {
+                        if ((b as LuaObject).IsNil)
+                            return a.IsNil;
+
                         return (b as LuaObject).luaobj.Equals(a.luaobj);
+                    }
                     else
                         return a.luaobj.Equals(b);
                 }

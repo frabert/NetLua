@@ -398,7 +398,10 @@ namespace NetLua
             if (op1.IsNumber && op2.IsNumber)
                 return op1.AsNumber() < op2.AsNumber();
             else if (op1.IsString && op2.IsString)
+            {
+                //TODO: Implement alphabetical check for strings
                 throw new NotImplementedException();
+            }
             else
             {
                 var handler = getBinhandler(op1, op2, "__lt");
@@ -414,6 +417,7 @@ namespace NetLua
             if (op1.IsNumber && op2.IsNumber)
                 return op1.AsNumber() <= op2.AsNumber();
             else if (op1.IsString && op2.IsString)
+                //TODO: Implement alphabetical check for strings
                 throw new NotImplementedException();
             else
             {

@@ -47,6 +47,7 @@ namespace NetLua
             ctx.Set("tonumber", (LuaFunction)tonumber);
             ctx.Set("tostring", (LuaFunction)tostring);
             ctx.Set("type", (LuaFunction)type);
+            ctx.Set("ipairs", (LuaFunction)ipairs);
         }
 
         /// <summary>
@@ -179,6 +180,7 @@ namespace NetLua
             }
             else
             {
+                //TODO: Implement tonumber for bases different from 10
                 throw new NotImplementedException();
             }
         }
@@ -210,6 +212,37 @@ namespace NetLua
                     return Return("userdata");
             }
             return Return();
+        }
+
+        LuaArguments ipairs(LuaArguments args)
+        {
+            LuaObject handler = LuaEvents.getMetamethod(args[0], "__ipairs");
+            if (!handler.IsNil)
+            {
+                return handler.Call(args);
+            }
+            else
+            {
+                if (args[0].IsTable)
+                {
+                    LuaFunction f = delegate(LuaArguments x)
+                    {
+                        var s = x[0];
+                        var var = x[1].AsNumber() + 1;
+
+                        var val = s[var];
+                        if (val == LuaObject.Nil)
+                            return Lua.Return(LuaObject.Nil);
+                        else
+                            return Lua.Return(var, val);
+                    };
+                    return Lua.Return(f, args[0], 0);
+                }
+                else
+                {
+                    throw new LuaException("t must be a table");
+                }
+            }
         }
 
         #endregion
