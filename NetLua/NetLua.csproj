@@ -49,13 +49,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ast\Ast.cs" />
+    <Compile Include="Libraries\IoLibrary.cs" />
     <Compile Include="Lua.cs" />
     <Compile Include="LuaContext.cs" />
     <Compile Include="LuaGrammar.cs" />
     <Compile Include="LuaInterpreter.cs" />
     <Compile Include="LuaObject.cs" />
     <Compile Include="LuaEvents.cs" />
-    <Compile Include="MathLibrary.cs" />
+    <Compile Include="Libraries\MathLibrary.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

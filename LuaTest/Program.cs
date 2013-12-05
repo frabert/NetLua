@@ -56,6 +56,7 @@ namespace LuaTest
             lua.DynamicContext.read = (LuaFunction)read;
 
             MathLibrary.AddMathLibrary(lua.Context);
+            IoLibrary.AddIoLibrary(lua.Context);
 
             while (true)
             {
