@@ -642,10 +642,12 @@ namespace NetLua
                 return "nil";
 
             if (IsTable)
-                return "{ " + string.Join(", ", AsTable().Select(kv => string.Format("[{0}]={1}", kv.Key, kv.Value.ToString())).ToArray()) + " }";
+                //return "{ " + string.Join(", ", AsTable().Select(kv => string.Format("[{0}]={1}", kv.Key, kv.Value.ToString())).ToArray()) + " }";
+                return "table";
 
             if (IsFunction)
-                return AsFunction().Method.ToString();
+                //return AsFunction().Method.ToString();
+                return "function";
 
             if (IsBool)
                 return luaobj.ToString().ToLower();
