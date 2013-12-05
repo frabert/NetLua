@@ -7,7 +7,11 @@ native code wrappers?</h3>
 <h1>NetLua is a free implementation of the Lua dynamic language in C#</h1>
 
 <h2>Getting started</h2>
-<div class="code-text" data-gist-id="7806269" data-gist-hide-footer="true"></div>
-{% highlight c# %}
-var x = NetLua.Lua();
+{% highlight linenos c# %}
+var lua = new NetLua.Lua();
+lua.DynamicContext.var = LuaObject.NewTable();
+lua.DynamicContext.var.x = 4;
+
+lua.DoString("var.x = 4");
+Console.WriteLine(lua.DynamicContext.var.x);
 {% endhighlight %}
