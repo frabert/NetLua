@@ -133,7 +133,7 @@ namespace NetLua
 
             var tableSep = new NonTerminal("");
             tableSep.Rule = ToTerm(";") | ",";
-            TableConstructFragment.Rule = ((ToTerm("[") + Expression + "]" + "=" | Identifier + "=" | Empty) + Expression) + ("," + TableConstructFragment | Empty) | Empty;
+            TableConstructFragment.Rule = ((ToTerm("[") + Expression + "]" + "=" | Identifier + "=" | Empty) + Expression) + (";" + TableConstructFragment | "," + TableConstructFragment | Empty) | Empty;
             TableConstruct.Rule = "{" + TableConstructFragment + "}";
 
             Expression.Rule =
