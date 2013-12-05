@@ -1,0 +1,17 @@
+header
+{
+	height: 45px;
+}
+
+footer
+{
+	height: 30px;
+	width: 100%;
+}
+
+.metro .page
+{
+	width:980px;
+	margin:0 auto;
+	padding:0 20px;
+}

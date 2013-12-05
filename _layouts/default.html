@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="{{ site.baseurl }}/css/metro-bootstrap.css">
+        <link rel="stylesheet" href="{{ site.baseurl }}/css/global.css">
+        
+        <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/gist-embed/1.4/gist-embed.min.js"></script>
+        <title>{{ page.title }}</title>
+        <meta name="author" content="Francesco Bertolaccini" />
+    </head>
+    <body class="metro">
+    <header class="bg-dark">
+    <div class="navigation-bar dark fixed-top shadow">
+      <div class="navigation-bar-content container">
+        <a href="/{{ site.baseurl }}" class="element brand">
+          <span class="icon-home"></span>
+          HOME
+        </a>
+        
+        <a href="http://github.com/frabert/LuaNet" class="element brand place-right">
+          <span class="icon-github"></span>
+          VIEW ON GITHUB
+        </a>
+      </div>
+      
+    </div>
+    </header>
+    <div class="page">
+      <h1>
+      NetLua
+      <small class="on-right">Completely managed Lua implementation</small>
+      </h1>
+      <hr />
+      {{ content }}
+    </div>
+    </body>
+</html>
