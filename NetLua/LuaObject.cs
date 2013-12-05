@@ -141,8 +141,8 @@ namespace NetLua
     /// </summary>
     public class LuaObject : DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
     {
-        protected object luaobj;
-        protected LuaType type;
+        internal object luaobj;
+        internal LuaType type;
         private LuaObject metatable = Nil;
 
         public LuaObject()

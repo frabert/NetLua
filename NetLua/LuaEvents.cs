@@ -283,9 +283,7 @@ namespace NetLua
             else
             {
                 handler = getMetamethod(table, "__index");
-                if (!handler.IsNil)
-                    return handler.Call(table, key)[0];
-                else
+                if (handler.IsNil)
                     throw new LuaException("Invalid argument");
             }
 
