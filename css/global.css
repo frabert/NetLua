@@ -15,3 +15,8 @@ footer
 	margin:0 auto;
 	padding:0 20px;
 }
+
+.highlight
+{
+	font-family: monospace;
+}
