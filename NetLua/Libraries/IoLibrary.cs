@@ -8,18 +8,44 @@ namespace NetLua
 {
     public static class IoLibrary
     {
+        class FileObject
+        {
+            public FileObject(Stream s)
+            {
+                stream = s;
+                if(s.CanRead)
+                    reader = new StreamReader(s);
+                if(s.CanWrite)
+                    writer = new StreamWriter(s);
+            }
+
+            public Stream stream;
+            public StreamReader reader;
+            public StreamWriter writer;
+        }
+
         static dynamic FileMetatable = LuaObject.NewTable();
 
         static LuaObject currentInput = LuaObject.Nil, currentOutput = LuaObject.Nil;
 
         static bool isStream(LuaObject obj)
         {
-            return (obj.IsUserData && obj.luaobj is Stream);
+            return (obj.IsUserData && obj.luaobj is FileObject);
         }
 
         static LuaObject CreateFileObject(Stream stream)
         {
-            LuaObject obj = LuaObject.FromObject(stream);
+            LuaObject obj = LuaObject.FromObject(new FileObject(stream));
+            obj.Metatable = FileMetatable;
+
+            return obj;
+        }
+
+        static LuaObject CreateFileObject(Stream stream, bool autoflush)
+        {
+            FileObject fobj = new FileObject(stream);
+            fobj.writer.AutoFlush = autoflush;
+            LuaObject obj = LuaObject.FromObject(fobj);
             obj.Metatable = FileMetatable;
 
             return obj;
@@ -32,6 +58,7 @@ namespace NetLua
             FileMetatable.__index = LuaObject.NewTable();
             FileMetatable.__index.write = (LuaFunction)write;
             FileMetatable.__index.close = (LuaFunction)close;
+            FileMetatable.__index.flush = (LuaFunction)flush;
 
             io.open = (LuaFunction)io_open;
             io.type = (LuaFunction)io_type;
@@ -40,8 +67,8 @@ namespace NetLua
             io.temp = (LuaFunction)io_temp;
 
             io.stdin = CreateFileObject(Console.OpenStandardInput());
-            io.stdout = CreateFileObject(Console.OpenStandardOutput());
-            io.stderr = CreateFileObject(Console.OpenStandardError());
+            io.stdout = CreateFileObject(Console.OpenStandardOutput(), true);
+            io.stderr = CreateFileObject(Console.OpenStandardError(), true);
 
             Context.Set("io", io);
         }
@@ -87,8 +114,8 @@ namespace NetLua
             var obj = args[0];
             if (isStream(obj))
             {
-                Stream stream = obj.luaobj as Stream;
-                if (!stream.CanRead && !stream.CanWrite)
+                FileObject fobj = obj.luaobj as FileObject;
+                if (!fobj.stream.CanWrite && !fobj.stream.CanRead)
                 {
                     return Lua.Return("closed file");
                 }
@@ -159,21 +186,19 @@ namespace NetLua
             var self = args[0];
             if (isStream(self))
             {
-                Stream stream = self.luaobj as Stream;
-                StreamWriter w = new StreamWriter(stream);
+                FileObject fobj = self.luaobj as FileObject;
                 foreach (var arg in args)
                 {
                     if (arg == self)
                         continue;
-                    if (!(self.IsString || self.IsNumber))
+                    if (!(arg.IsString || arg.IsNumber))
                     {
                         Lua.Return();
                     }
 
-                    if (stream.CanWrite)
+                    if (fobj.stream.CanWrite)
                     {
-                        w.Write(arg.ToString());
-                        w.Flush();
+                        fobj.writer.Write(arg.ToString());
                     }
                     else
                     {
@@ -193,8 +218,19 @@ namespace NetLua
             var obj = args[0];
             if (isStream(obj))
             {
-                Stream stream = obj.luaobj as Stream;
-                stream.Close();
+                FileObject fobj = obj.luaobj as FileObject;
+                fobj.stream.Close();
+            }
+            return Lua.Return();
+        }
+
+        static LuaArguments flush(LuaArguments args)
+        {
+            var obj = args[0];
+            if(isStream(obj))
+            {
+                FileObject fobj = obj.luaobj as FileObject;
+                fobj.writer.Flush();
             }
             return Lua.Return();
         }

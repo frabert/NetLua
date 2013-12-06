@@ -127,7 +127,6 @@ namespace NetLua
 
             math.pi = Math.PI;
 
-
             Context.Set("math", math);
         }
     }
