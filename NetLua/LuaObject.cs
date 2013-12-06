@@ -64,7 +64,7 @@ namespace NetLua
     public class LuaArguments : IEnumerable<LuaObject>
     {
         List<LuaObject> list = new List<LuaObject>();
-        
+
         public LuaArguments(LuaObject[] Objects)
         {
             list.AddRange(Objects);
@@ -667,6 +667,23 @@ namespace NetLua
             {
                 return (luaobj != null ? luaobj.GetHashCode() : 0) ^ type.GetHashCode();
             }
+        }
+
+        /// <summary>
+        /// Calls the object passing the instance as first argument. Uses the metafield __call
+        /// </summary>
+        /// <param name="instance">The object to be passed as first argument</param>
+        /// <param name="args">Arguments to be passed after the object</param>
+        public LuaArguments MethodCall(LuaObject instance, LuaArguments args)
+        {
+            LuaObject[] objs = new LuaObject[args.Length + 1];
+            objs[0] = instance;
+            for (int i = 0; i < args.Length; i++)
+            {
+                objs[i + 1] = args[i];
+            }
+
+            return this.Call(objs);
         }
 
         /// <summary>
