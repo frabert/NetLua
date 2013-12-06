@@ -33,11 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Irony">
-      <HintPath>..\..\..\..\..\Downloads\Irony_2013_09_24\irony_10d0c9c35284\Irony\bin\Release\Irony.dll</HintPath>
-    </Reference>
-    <Reference Include="Irony.Interpreter">
-      <HintPath>..\..\..\..\..\Downloads\Irony_2013_09_24\irony_10d0c9c35284\Irony.Interpreter\bin\Release\Irony.Interpreter.dll</HintPath>
+    <Reference Include="Irony, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ca48ace7223ead47, processorArchitecture=MSIL">
+      <HintPath>..\packages\Irony.0.9.1-net40\lib\net40\Irony.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -59,6 +56,9 @@
     <Compile Include="Libraries\MathLibrary.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
