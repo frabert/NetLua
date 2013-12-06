@@ -8,14 +8,15 @@ namespace NetLua
 {
     public static class IoLibrary
     {
+        // TODO: implment lines, read
         class FileObject
         {
             public FileObject(Stream s)
             {
                 stream = s;
-                if(s.CanRead)
+                if (s.CanRead)
                     reader = new StreamReader(s);
-                if(s.CanWrite)
+                if (s.CanWrite)
                     writer = new StreamWriter(s);
             }
 
@@ -59,15 +60,20 @@ namespace NetLua
             FileMetatable.__index.write = (LuaFunction)write;
             FileMetatable.__index.close = (LuaFunction)close;
             FileMetatable.__index.flush = (LuaFunction)flush;
+            FileMetatable.__index.seek = (LuaFunction)seek;
 
             io.open = (LuaFunction)io_open;
             io.type = (LuaFunction)io_type;
             io.input = (LuaFunction)io_input;
             io.output = (LuaFunction)io_output;
             io.temp = (LuaFunction)io_temp;
+            io.flush = (LuaFunction)io_flush;
+            io.write = (LuaFunction)io_write;
 
-            io.stdin = CreateFileObject(Console.OpenStandardInput());
-            io.stdout = CreateFileObject(Console.OpenStandardOutput(), true);
+            currentInput = CreateFileObject(Console.OpenStandardInput());
+            currentOutput = CreateFileObject(Console.OpenStandardOutput(), true);
+            io.stdin = currentInput;
+            io.stdout = currentOutput;
             io.stderr = CreateFileObject(Console.OpenStandardError(), true);
 
             Context.Set("io", io);
@@ -160,7 +166,8 @@ namespace NetLua
             }
             else if (obj.IsString)
             {
-                currentOutput = io_open(args)[0];
+                FileStream stream = new FileStream(obj.ToString(), FileMode.OpenOrCreate);
+                currentOutput = CreateFileObject(stream);
                 return Lua.Return();
             }
             else if (args.Length == 0)
@@ -179,6 +186,45 @@ namespace NetLua
             Stream s = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Write, Int16.MaxValue, FileOptions.DeleteOnClose);
 
             return Lua.Return(CreateFileObject(s));
+        }
+
+        static LuaArguments io_write(LuaArguments args)
+        {
+            var obj = args[0];
+            if (!obj.IsNil)
+            {
+                return currentOutput["write"].MethodCall(currentOutput, args);
+            }
+            else
+            {
+                return Lua.Return();
+            }
+        }
+
+        static LuaArguments io_flush(LuaArguments args)
+        {
+            var obj = args[0];
+            if (obj.IsNil)
+            {
+                return currentOutput["flush"].MethodCall(currentOutput, args);
+            }
+            else
+            {
+                return obj["flush"].MethodCall(obj, args);
+            }
+        }
+
+        static LuaArguments io_close(LuaArguments args)
+        {
+            var obj = args[0];
+            if (obj.IsNil)
+            {
+                return currentOutput["close"].MethodCall(currentOutput, args);
+            }
+            else
+            {
+                return obj["close"].MethodCall(obj, args);
+            }
         }
 
         static LuaArguments write(LuaArguments args)
@@ -227,10 +273,33 @@ namespace NetLua
         static LuaArguments flush(LuaArguments args)
         {
             var obj = args[0];
-            if(isStream(obj))
+            if (isStream(obj))
             {
                 FileObject fobj = obj.luaobj as FileObject;
                 fobj.writer.Flush();
+            }
+            return Lua.Return();
+        }
+
+        static LuaArguments seek(LuaArguments args)
+        {
+            var obj = args[0];
+            var whence = args[1] | "cur";
+            var offset = args[2] | 0;
+
+            if (isStream(obj))
+            {
+                var fobj = obj.luaobj as FileObject;
+                switch (whence.ToString())
+                {
+                    case "cur":
+                        fobj.stream.Position += (long)offset; break;
+                    case "set":
+                        fobj.stream.Position = (long)offset; break;
+                    case "end":
+                        fobj.stream.Position = fobj.stream.Length + (long)offset; break;
+                }
+                return Lua.Return(fobj.stream.Position);
             }
             return Lua.Return();
         }
