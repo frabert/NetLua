@@ -17,10 +17,21 @@ namespace NetLua
         static MethodInfo LuaContext_Set = typeof(LuaContext).GetMethod("Set");
 
         static ConstructorInfo LuaContext_New_parent = typeof(LuaContext).GetConstructor(new[] { typeof(LuaContext) });
+        static ConstructorInfo LuaArguments_New = typeof(LuaArguments).GetConstructor(new[] { typeof(LuaObject[]) });
+
+        static Expression CreateLuaArguments(params Expression[] Expressions)
+        {
+            return Expression.New(LuaArguments_New, Expressions);
+        }
+
+        static Expression GetFirstArgument(Expression Expression)
+        {
+            return Expression.ArrayAccess(Expression, Expression.Constant(0));
+        }
 
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
         {
-            Expression left = CompileExpression(expr.Left, Context), right = CompileExpression(expr.Right, Context);
+            Expression left = GetFirstArgument(CompileExpression(expr.Left, Context)), right = GetFirstArgument(CompileExpression(expr.Right, Context));
             switch (expr.Operation)
             {
                 case BinaryOp.Addition:
@@ -80,28 +91,30 @@ namespace NetLua
             }
             else
             {
-                Expression p = CompileExpression(expr.Prefix, Context);
+                Expression p = GetFirstArgument(CompileExpression(expr.Prefix, Context));
                 return Expression.ArrayIndex(p, Expression.Constant(expr.Name));
             }
         }
 
         static Expression GetTableAccess(Ast.TableAccess expr, Expression Context)
         {
-            Expression e = CompileExpression(expr.Expression, Context);
-            Expression i = CompileExpression(expr.Index, Context);
+            Expression e = GetFirstArgument(CompileExpression(expr.Expression, Context));
+            Expression i = GetFirstArgument(CompileExpression(expr.Index, Context));
 
             return Expression.ArrayAccess(e, i);
         }
 
-        static Expression SetVariable(Ast.Variable expr, IExpression value, Expression Context)
+        static Expression SetVariable(Ast.Variable expr, Expression value, Expression Context)
         {
-            Expression v = CompileExpression(value, Context);
+            //Expression v = CompileExpression(value, Context);
             if (expr.Prefix == null)
             {
-                return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), v);
+                return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), value);
             }
             else
             {
+                /*Expression p = GetFirstArgument(CompileExpression(expr.Prefix, Context));
+                return Expression.ArrayIndex(p, Expression.Constant(expr.Name));*/
                 throw new NotImplementedException();
             }
         }
@@ -122,13 +135,13 @@ namespace NetLua
         static Expression CompileExpression(IExpression expr, Expression Context)
         {
             if (expr is Ast.BinaryExpression)
-                return CompileBinaryExpression(expr as Ast.BinaryExpression, Context);
+                return CreateLuaArguments(CompileBinaryExpression(expr as Ast.BinaryExpression, Context));
             if (expr is Ast.UnaryExpression)
-                return CompileUnaryExpression(expr as Ast.UnaryExpression, Context);
+                return CreateLuaArguments(CompileUnaryExpression(expr as Ast.UnaryExpression, Context));
             if (expr is Ast.Variable)
-                return GetVariable(expr as Ast.Variable, Context);
+                return CreateLuaArguments(GetVariable(expr as Ast.Variable, Context));
             if (expr is Ast.TableAccess)
-                return GetTableAccess(expr as Ast.TableAccess, Context);
+                return CreateLuaArguments(GetTableAccess(expr as Ast.TableAccess, Context));
             throw new NotImplementedException();
         }
     }

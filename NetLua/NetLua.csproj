@@ -48,6 +48,7 @@
     <Compile Include="Ast\Ast.cs" />
     <Compile Include="Libraries\IoLibrary.cs" />
     <Compile Include="Lua.cs" />
+    <Compile Include="LuaCompiler.cs" />
     <Compile Include="LuaContext.cs" />
     <Compile Include="LuaGrammar.cs" />
     <Compile Include="LuaInterpreter.cs" />
