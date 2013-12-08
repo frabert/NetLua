@@ -64,12 +64,22 @@ namespace NetLua
 
         static LuaArguments math_max(LuaArguments args)
         {
-            return Lua.Return(Math.Max(args[0], args[1]));
+            double max = args[0];
+            foreach (LuaObject o in args)
+            {
+                max = Math.Max(max, o);
+            }
+            return Lua.Return(max);
         }
 
         static LuaArguments math_min(LuaArguments args)
         {
-            return Lua.Return(Math.Min(args[0], args[1]));
+            double min = args[0];
+            foreach (LuaObject o in args)
+            {
+                min = Math.Min(min, o);
+            }
+            return Lua.Return(min);
         }
 
         static LuaArguments math_pow(LuaArguments args)
