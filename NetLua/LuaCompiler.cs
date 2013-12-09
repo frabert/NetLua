@@ -19,14 +19,25 @@ namespace NetLua
         static ConstructorInfo LuaContext_New_parent = typeof(LuaContext).GetConstructor(new[] { typeof(LuaContext) });
         static ConstructorInfo LuaArguments_New = typeof(LuaArguments).GetConstructor(new[] { typeof(LuaObject[]) });
 
+        static MethodInfo LuaEvents_eq = typeof(LuaEvents).GetMethod("eq_event");
+        static MethodInfo LuaEvents_concat = typeof(LuaEvents).GetMethod("concat_event");
+
         static Expression CreateLuaArguments(params Expression[] Expressions)
         {
-            return Expression.New(LuaArguments_New, Expressions);
+            var array = Expression.NewArrayInit(typeof(LuaObject), Expressions);
+            return Expression.New(LuaArguments_New, array);
         }
 
         static Expression GetFirstArgument(Expression Expression)
         {
-            return Expression.ArrayAccess(Expression, Expression.Constant(0));
+            if (Expression.Type == typeof(LuaArguments))
+            {
+                return Expression.ArrayAccess(Expression.Convert(Expression, typeof(LuaObject[])), Expression.Constant(0));
+            }
+            else
+            {
+                return Expression.ArrayAccess(Expression, Expression.Constant(0));
+            }
         }
 
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
@@ -39,13 +50,13 @@ namespace NetLua
                 case BinaryOp.And:
                     return Expression.And(left, right);
                 case BinaryOp.Concat:
-                    throw new NotImplementedException();
+                    return Expression.Call(LuaEvents_concat, left, right);
                 case BinaryOp.Different:
-                    return Expression.Negate(Expression.Equal(left, right));
+                    return Expression.Negate(Expression.Call(LuaEvents_eq, left, right));
                 case BinaryOp.Division:
                     return Expression.Divide(left, right);
                 case BinaryOp.Equal:
-                    return Expression.Equal(left, right);
+                    return Expression.Call(LuaEvents_eq, left, right);
                 case BinaryOp.GreaterOrEqual:
                     return Expression.GreaterThanOrEqual(left, right);
                 case BinaryOp.GreaterThan:
@@ -134,6 +145,15 @@ namespace NetLua
 
         static Expression CompileExpression(IExpression expr, Expression Context)
         {
+            if (expr is NumberLiteral)
+                return CreateLuaArguments(Expression.Constant((LuaObject)((expr as NumberLiteral).Value)));
+            if (expr is StringLiteral)
+                return CreateLuaArguments(Expression.Constant((LuaObject)((expr as StringLiteral).Value)));
+            if (expr is BoolLiteral)
+                return CreateLuaArguments(Expression.Constant((LuaObject)((expr as BoolLiteral).Value)));
+            if (expr is NilLiteral)
+                return CreateLuaArguments(Expression.Constant(LuaObject.Nil));
+
             if (expr is Ast.BinaryExpression)
                 return CreateLuaArguments(CompileBinaryExpression(expr as Ast.BinaryExpression, Context));
             if (expr is Ast.UnaryExpression)
@@ -143,6 +163,17 @@ namespace NetLua
             if (expr is Ast.TableAccess)
                 return CreateLuaArguments(GetTableAccess(expr as Ast.TableAccess, Context));
             throw new NotImplementedException();
+        }
+
+        public static Func<LuaObject> Comp(IExpression expr, LuaContext ctx)
+        {
+            var variable = Expression.Parameter(typeof(LuaObject), "val");
+            var call = CompileExpression(expr, Expression.Constant(ctx));
+            var value = GetFirstArgument(call);
+            var assign = Expression.Assign(variable, value);
+
+            var block = Expression.Block(new[] {variable}, assign, variable);
+            return Expression.Lambda<Func<LuaObject>>(block).Compile();
         }
     }
 }

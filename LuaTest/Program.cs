@@ -58,6 +58,9 @@ namespace LuaTest
             MathLibrary.AddMathLibrary(lua.Context);
             IoLibrary.AddIoLibrary(lua.Context);
 
+            var x = LuaCompiler.Comp(new NetLua.Ast.StringLiteral() { Value = "ciao" }, lua.Context);
+            var y = x();
+
             while (true)
             {
                 lua.DoString(Console.ReadLine());
