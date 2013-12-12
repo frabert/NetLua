@@ -65,6 +65,11 @@ namespace NetLua
     {
         List<LuaObject> list = new List<LuaObject>();
 
+        public LuaArguments()
+        {
+
+        }
+
         public LuaArguments(params LuaObject[] Objects)
         {
             list.AddRange(Objects);
