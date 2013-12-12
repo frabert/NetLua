@@ -650,39 +650,41 @@ namespace NetLua
                     var child = node.ChildNodes[0];
                     Ast.TableConstructor t = new Ast.TableConstructor();
                     t.Values = new Dictionary<Ast.IExpression, Ast.IExpression>();
+                    
                     int i = 1;
-                    if (child.ChildNodes.Count > 0)
+                    while (true)
                     {
-                        while (true)
+                        if (child.ChildNodes.Count == 0)
+                            break;
+
+                        var value = child.ChildNodes[0];
+
+                        if (value.ChildNodes.Count == 1)
                         {
-                            ParseTreeNode indexNode = child.ChildNodes[0];
-                            ParseTreeNode valueNode = child.ChildNodes[1];
-                            ParseTreeNode nextNode = child.ChildNodes[2];
-
-                            Ast.IExpression index;
-                            if (indexNode.ChildNodes.Count == 0)
-                            {
-                                index = new Ast.NumberLiteral() { Value = i };
-                                i++;
-                            }
-                            else if (indexNode.ChildNodes[0].Term.Name == "identifier")
-                            {
-                                index = new Ast.StringLiteral() { Value = indexNode.ChildNodes[0].Token.ValueString };
-                            }
-                            else
-                            {
-                                index = ParseExpression(indexNode.ChildNodes[0]);
-                            }
-
-                            Ast.IExpression value = ParseExpression(valueNode);
-                            t.Values.Add(index, value);
-
-                            child = nextNode;
-                            if (child.ChildNodes.Count == 0)
-                                break;
-                            else
-                                child = child.ChildNodes[0];
+                            t.Values.Add(new Ast.NumberLiteral() { Value = i }, ParseExpression(value.ChildNodes[0]));
+                            i++;
                         }
+                        else
+                        {
+                            var prefix = value.ChildNodes[0];
+
+                            Ast.IExpression key;
+                            if (prefix.ChildNodes[0].Term.Name == "identifier")
+                                key = new Ast.StringLiteral() { Value = prefix.ChildNodes[0].Token.ValueString };
+                            else
+                                key = ParseExpression(prefix.ChildNodes[0]);
+
+                            var expr = value.ChildNodes[1];
+                            Ast.IExpression val = ParseExpression(expr);
+
+                            t.Values.Add(key, val);
+                        }
+
+                        //child = child.ChildNodes[1].ChildNodes[0];
+                        child = child.ChildNodes[1];
+                        if (child.ChildNodes.Count == 0)
+                            break;
+                        child = child.ChildNodes[0];
                     }
                     return t;
                 }
@@ -736,6 +738,10 @@ namespace NetLua
                 else if (child.Term != null && child.Term.Name == "OopCall")
                 {
                     return ParseOopCall(child);
+                }
+                else if (child.Term != null && child.Term.Name == "Varargs")
+                {
+                    return new Ast.VarargsLiteral();
                 }
             }
             throw new Exception("Invalid Expression node");

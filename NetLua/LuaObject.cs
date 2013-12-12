@@ -94,6 +94,11 @@ namespace NetLua
             }
         }
 
+        public void Add(LuaObject obj)
+        {
+            list.Add(obj);
+        }
+
         public void Concat(LuaArguments args)
         {
             list.AddRange(args.list);
@@ -117,6 +122,18 @@ namespace NetLua
         public static implicit operator LuaObject[](LuaArguments args)
         {
             return args.list.ToArray();
+        }
+
+        public LuaArguments GetSubset(int startIndex)
+        {
+            if (startIndex >= list.Count)
+            {
+                return new LuaArguments(new LuaObject[] { });
+            }
+            else
+            {
+                return new LuaArguments(list.GetRange(startIndex, list.Count - startIndex).ToArray());
+            }
         }
     }
 

@@ -135,6 +135,11 @@ namespace NetLua
             return table[index];
         }
 
+        static LuaArguments EvalVarargs(LuaContext Context)
+        {
+            return Context.Varargs;
+        }
+
         static LuaArguments EvalExpression(IExpression Expression, LuaContext Context)
         {
             if (Expression is NumberLiteral)
@@ -180,6 +185,10 @@ namespace NetLua
                 TableConstructor tctor = (TableConstructor)Expression;
                 return Lua.Return(EvalTableConstructor(tctor, Context));
             }
+            else if (Expression is VarargsLiteral)
+            {
+                return Context.Varargs;
+            }
 
             return Lua.Return();
         }
@@ -187,12 +196,31 @@ namespace NetLua
         static LuaObject EvalTableConstructor(TableConstructor tctor, LuaContext Context)
         {
             Dictionary<LuaObject, LuaObject> table = new Dictionary<LuaObject, LuaObject>();
+            int i = 0;
             foreach (KeyValuePair<IExpression, IExpression> pair in tctor.Values)
             {
-                LuaObject key = EvalExpression(pair.Key, Context)[0];
-                LuaObject value = EvalExpression(pair.Value, Context)[0];
+                if (i == tctor.Values.Count - 1 && (pair.Value is FunctionCall || pair.Value is VarargsLiteral))
+                    // This is the last element, and this is a function call or varargs, thus we will add
+                    // every return value to the table
+                {
+                    LuaObject key = EvalExpression(pair.Key, Context)[0];
+                    LuaArguments values = EvalExpression(pair.Value, Context);
 
-                table.Add(key, value);
+                    double k = key;
+                    foreach (LuaObject v in values)
+                    {
+                        table.Add(k, v);
+                        k++;
+                    }
+                }
+                else
+                {
+                    LuaObject key = EvalExpression(pair.Key, Context)[0];
+                    LuaObject value = EvalExpression(pair.Value, Context)[0];
+
+                    table.Add(key, value);
+                }
+                i++;
             }
             return LuaObject.FromTable(table);
         }
@@ -203,16 +231,12 @@ namespace NetLua
             {
                 LuaContext ctx = new LuaContext(Context);
                 LuaReturnStatus ret;
-                for (int i = 0; i < fdef.Arguments.Count; i++)
+                for (int i = 0; i < args.Length; i++)
                 {
-                    if (i > args.Length)
-                    {
-                        ctx.SetLocal(fdef.Arguments[i].Name, LuaObject.Nil);
-                    }
-                    else
-                    {
+                    if (i < fdef.Arguments.Count)
                         ctx.SetLocal(fdef.Arguments[i].Name, args[i]);
-                    }
+                    else
+                        ctx.Varargs.Add(args[i]);
                 }
                 return EvalBlock(fdef.Body, ctx, out ret);
             });

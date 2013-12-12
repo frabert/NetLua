@@ -91,6 +91,9 @@ namespace NetLua.Ast
         public bool Value;
     }
 
+    public class VarargsLiteral : IExpression
+    { }
+
     public class FunctionCall : IStatement, IExpression
     {
         public IExpression Function;
