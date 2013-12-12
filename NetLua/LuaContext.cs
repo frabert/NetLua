@@ -37,6 +37,7 @@ namespace NetLua
     {
         LuaContext parent;
         Dictionary<string, LuaObject> variables;
+        LuaArguments varargs;
 
         /// <summary>
         /// Used to create scopes
@@ -45,6 +46,7 @@ namespace NetLua
         {
             parent = Parent;
             variables = new Dictionary<string, LuaObject>();
+            varargs = new LuaArguments(new LuaObject[] { });
         }
 
         /// <summary>
@@ -99,6 +101,19 @@ namespace NetLua
             else
             {
                 parent.Set(Name, Value);
+            }
+        }
+
+        internal LuaArguments Varargs
+        {
+            get
+            {
+                return varargs;
+            }
+
+            set
+            {
+                varargs = value;
             }
         }
 

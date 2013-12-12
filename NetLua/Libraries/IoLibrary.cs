@@ -61,6 +61,7 @@ namespace NetLua
             FileMetatable.__index.close = (LuaFunction)close;
             FileMetatable.__index.flush = (LuaFunction)flush;
             FileMetatable.__index.seek = (LuaFunction)seek;
+            FileMetatable.__index.read = (LuaFunction)read;
 
             io.open = (LuaFunction)io_open;
             io.type = (LuaFunction)io_type;
@@ -69,6 +70,7 @@ namespace NetLua
             io.temp = (LuaFunction)io_temp;
             io.flush = (LuaFunction)io_flush;
             io.write = (LuaFunction)io_write;
+            io.read = (LuaFunction)io_read;
 
             currentInput = CreateFileObject(Console.OpenStandardInput());
             currentOutput = CreateFileObject(Console.OpenStandardOutput(), true);
@@ -139,12 +141,12 @@ namespace NetLua
             if (isStream(obj))
             {
                 currentInput = obj;
-                return Lua.Return();
+                return Lua.Return(currentInput);
             }
             else if (obj.IsString)
             {
                 currentInput = io_open(args)[0];
-                return Lua.Return();
+                return Lua.Return(currentInput);
             }
             else if (args.Length == 0)
             {
@@ -162,13 +164,13 @@ namespace NetLua
             if (isStream(obj))
             {
                 currentOutput = obj;
-                return Lua.Return();
+                return Lua.Return(currentOutput);
             }
             else if (obj.IsString)
             {
                 FileStream stream = new FileStream(obj.ToString(), FileMode.OpenOrCreate);
                 currentOutput = CreateFileObject(stream);
-                return Lua.Return();
+                return Lua.Return(currentOutput);
             }
             else if (args.Length == 0)
             {
@@ -225,6 +227,11 @@ namespace NetLua
             {
                 return obj["close"].MethodCall(obj, args);
             }
+        }
+
+        static LuaArguments io_read(LuaArguments args)
+        {
+            return currentInput["read"].MethodCall(currentInput, args);
         }
 
         static LuaArguments write(LuaArguments args)
@@ -302,6 +309,57 @@ namespace NetLua
                 return Lua.Return(fobj.stream.Position);
             }
             return Lua.Return();
+        }
+
+        static LuaArguments read(LuaArguments args)
+        {
+            var self = args[0];
+            if (isStream(self))
+            {
+                var fobj = self.luaobj as FileObject;
+                if (args.Length == 1)
+                {
+                    var line = fobj.reader.ReadLine();
+
+                    return Lua.Return(line);
+                }
+                else
+                {
+                    List<LuaObject> ret = new List<LuaObject>();
+                    foreach (var arg in args)
+                    {
+                        if (arg == self)
+                            continue;
+                        if (arg.IsNumber)
+                        {
+                            StringBuilder bld = new StringBuilder();
+                            for (int i = 0; i < arg; i++)
+                            {
+                                bld.Append((char)fobj.reader.Read());
+                            }
+                            ret.Add(bld.ToString());
+                        }
+                        else if (arg == "*a")
+                        {
+                            ret.Add(fobj.reader.ReadToEnd());
+                        }
+                        else if (arg == "*l")
+                        {
+                            ret.Add(fobj.reader.ReadLine());
+                        }
+                        else if (arg == "*n")
+                        {
+                            //TODO: Implement io.read("*n")
+                            throw new NotImplementedException();
+                        }
+                    }
+                    return Lua.Return(ret.ToArray());
+                }
+            }
+            else
+            {
+                return Lua.Return();
+            }
         }
     }
 }
