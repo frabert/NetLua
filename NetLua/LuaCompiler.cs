@@ -11,20 +11,26 @@ namespace NetLua
 {
     public static class LuaCompiler
     {
-        static MethodInfo LuaContext_Get = typeof(LuaContext).GetMethod("Get");
-        static MethodInfo LuaContext_SetLocal = typeof(LuaContext).GetMethod("SetLocal");
-        static MethodInfo LuaContext_SetGlobal = typeof(LuaContext).GetMethod("SetGlobal");
-        static MethodInfo LuaContext_Set = typeof(LuaContext).GetMethod("Set");
+        static Type LuaContext_Type = typeof(LuaContext);
+        static Type LuaArguments_Type = typeof(LuaArguments);
+        static Type LuaEvents_Type = typeof(LuaEvents);
+        static Type LuaObject_Type = typeof(LuaObject);
 
-        static MethodInfo LuaArguments_Concat = typeof(LuaArguments).GetMethod("Concat");
+        static MethodInfo LuaContext_Get = LuaContext_Type.GetMethod("Get");
+        static MethodInfo LuaContext_SetLocal = LuaContext_Type.GetMethod("SetLocal");
+        static MethodInfo LuaContext_SetGlobal = LuaContext_Type.GetMethod("SetGlobal");
+        static MethodInfo LuaContext_Set = LuaContext_Type.GetMethod("Set");
 
-        static ConstructorInfo LuaContext_New_parent = typeof(LuaContext).GetConstructor(new[] { typeof(LuaContext) });
-        static ConstructorInfo LuaArguments_New = typeof(LuaArguments).GetConstructor(new[] { typeof(LuaObject[]) });
-        static ConstructorInfo LuaArguments_New_void = typeof(LuaArguments).GetConstructor(new Type[] { });
+        static MethodInfo LuaArguments_Concat = LuaArguments_Type.GetMethod("Concat");
 
-        static MethodInfo LuaEvents_eq = typeof(LuaEvents).GetMethod("eq_event");
-        static MethodInfo LuaEvents_concat = typeof(LuaEvents).GetMethod("concat_event");
+        static ConstructorInfo LuaContext_New_parent = LuaContext_Type.GetConstructor(new[] { typeof(LuaContext) });
+        static ConstructorInfo LuaArguments_New = LuaArguments_Type.GetConstructor(new[] { typeof(LuaObject[]) });
+        static ConstructorInfo LuaArguments_New_void = LuaArguments_Type.GetConstructor(new Type[] { });
 
+        static MethodInfo LuaEvents_eq = LuaEvents_Type.GetMethod("eq_event");
+        static MethodInfo LuaEvents_concat = LuaEvents_Type.GetMethod("concat_event");
+
+        #region Helpers
         static Expression CreateLuaArguments(params Expression[] Expressions)
         {
             var array = Expression.NewArrayInit(typeof(LuaObject), Expressions);
@@ -54,6 +60,7 @@ namespace NetLua
                 return Expression.ArrayAccess(Expression, Expression.Constant(n));
             }
         }
+        #endregion
 
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
         {
@@ -118,7 +125,7 @@ namespace NetLua
             else
             {
                 Expression p = GetFirstArgument(CompileExpression(expr.Prefix, Context));
-                return Expression.ArrayIndex(p, Expression.Constant(expr.Name));
+                return Expression.Property(p, "Item", Expression.Constant(expr.Name));
             }
         }
 
@@ -132,29 +139,16 @@ namespace NetLua
 
         static Expression SetVariable(Ast.Variable expr, Expression value, Expression Context)
         {
-            //Expression v = CompileExpression(value, Context);
             if (expr.Prefix == null)
             {
                 return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), value);
             }
             else
             {
-                /*Expression p = GetFirstArgument(CompileExpression(expr.Prefix, Context));
-                return Expression.ArrayIndex(p, Expression.Constant(expr.Name));*/
-                throw new NotImplementedException();
-            }
-        }
-
-        static Expression SetLocalVariable(Ast.Variable expr, IExpression value, Expression Context)
-        {
-            Expression v = CompileExpression(value, Context);
-            if (expr.Prefix == null)
-            {
-                return Expression.Call(Context, LuaContext_SetLocal, Expression.Constant(expr.Name), v);
-            }
-            else
-            {
-                throw new NotImplementedException();
+                var prefix = GetFirstArgument(CompileExpression(expr.Prefix, Context));
+                var index = Expression.Constant(expr.Name);
+                var set = Expression.Property(prefix, "Item", index);
+                return Expression.Assign(set, value);
             }
         }
 
@@ -186,9 +180,10 @@ namespace NetLua
             {
                 var assign = stat as Ast.Assignment;
 
-                var variable = Expression.Parameter(typeof(LuaArguments));
+                var variable = Expression.Parameter(typeof(LuaArguments), "vars");
                 List<Expression> stats = new List<Expression>();
-                stats.Add(Expression.New(LuaArguments_New_void));
+
+                stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
                 foreach (IExpression expr in assign.Expressions)
                 {
                     var ret = CompileExpression(expr, Context);
@@ -201,28 +196,32 @@ namespace NetLua
                     if (a is Ast.Variable)
                     {
                         var x = a as Ast.Variable;
-                        stats.Add(SetVariable(x, arg, Context);
+                        stats.Add(SetVariable(x, arg, Context));
                     }
                     else if (a is Ast.TableAccess)
                     {
-                        /*var x = a as Ast.Variable;
-                        stats.Add(Set*/
-                        throw new NotImplementedException();
+                        var x = a as Ast.TableAccess;
+
+                        var expression = GetFirstArgument(CompileExpression(x.Expression, Context));
+                        var index = GetFirstArgument(CompileExpression(x.Index, Context));
+
+                        var set = Expression.Property(expression, "Item", index);
+                        stats.Add(Expression.Assign(set, arg));
                     }
+                    i++;
                 }
+
+                return Expression.Block(new[] {variable}, stats.ToArray());
             }
             throw new NotImplementedException();
         }
 
-        public static Func<LuaObject> Comp(IStatement expr, LuaContext ctx)
-        {
-            var variable = Expression.Parameter(typeof(LuaObject), "val");
-            var call = CompileExpression(expr, Expression.Constant(ctx));
-            var value = GetFirstArgument(call);
-            var assign = Expression.Assign(variable, value);
+        public delegate void TestFunc();
 
-            var block = Expression.Block(new[] {variable}, assign, variable);
-            return Expression.Lambda<Func<LuaObject>>(block).Compile();
+        public static TestFunc Comp(IStatement expr, LuaContext ctx)
+        {
+            Expression e = CompileStatement(expr, Expression.Constant(ctx));
+            return Expression.Lambda<TestFunc>(e).Compile();
         }
     }
 }
