@@ -22,6 +22,7 @@ namespace NetLua
         static MethodInfo LuaContext_Set = LuaContext_Type.GetMethod("Set");
 
         static MethodInfo LuaArguments_Concat = LuaArguments_Type.GetMethod("Concat");
+        static MethodInfo LuaArguments_Add = LuaArguments_Type.GetMethod("Add");
 
         static ConstructorInfo LuaContext_New_parent = LuaContext_Type.GetConstructor(new[] { typeof(LuaContext) });
         static ConstructorInfo LuaArguments_New = LuaArguments_Type.GetConstructor(new[] { typeof(LuaObject[]) });
@@ -29,6 +30,11 @@ namespace NetLua
 
         static MethodInfo LuaEvents_eq = LuaEvents_Type.GetMethod("eq_event");
         static MethodInfo LuaEvents_concat = LuaEvents_Type.GetMethod("concat_event");
+
+        static MethodInfo LuaObject_Call = LuaObject_Type.GetMethod("Call", new[] { LuaArguments_Type });
+        static MethodInfo LuaObject_AsBool = LuaObject_Type.GetMethod("AsBool");
+
+        static LuaArguments VoidArguments = new LuaArguments();
 
         #region Helpers
         static Expression CreateLuaArguments(params Expression[] Expressions)
@@ -47,6 +53,12 @@ namespace NetLua
             {
                 return Expression.ArrayAccess(Expression, Expression.Constant(0));
             }
+        }
+
+        static Expression GetFirstArgumentAsBool(Expression Expression)
+        {
+            Expression e = GetFirstArgument(Expression);
+            return Expression.Call(e, LuaObject_AsBool);
         }
 
         static Expression GetArgument(Expression Expression, int n)
@@ -174,54 +186,190 @@ namespace NetLua
             throw new NotImplementedException();
         }
 
-        static Expression CompileStatement(IStatement stat, Expression Context)
+        static Expression CompileAssignment(Ast.Assignment assign, Expression Context)
         {
-            if (stat is Ast.Assignment)
+            var variable = Expression.Parameter(typeof(LuaArguments), "vars");
+            List<Expression> stats = new List<Expression>();
+
+            stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
+            foreach (IExpression expr in assign.Expressions)
             {
-                var assign = stat as Ast.Assignment;
-
-                var variable = Expression.Parameter(typeof(LuaArguments), "vars");
-                List<Expression> stats = new List<Expression>();
-
-                stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
-                foreach (IExpression expr in assign.Expressions)
+                var ret = CompileExpression(expr, Context);
+                stats.Add(Expression.Call(variable, LuaArguments_Concat, ret));
+            }
+            int i = 0;
+            foreach (IAssignable var in assign.Variables)
+            {
+                var arg = GetArgument(variable, i);
+                if (var is Ast.Variable)
                 {
-                    var ret = CompileExpression(expr, Context);
-                    stats.Add(Expression.Call(variable, LuaArguments_Concat, ret));
+                    var x = var as Ast.Variable;
+                    stats.Add(SetVariable(x, arg, Context));
                 }
-                int i = 0;
-                foreach (IAssignable a in assign.Variables)
+                else if (var is Ast.TableAccess)
                 {
-                    var arg = GetArgument(variable, i);
-                    if (a is Ast.Variable)
-                    {
-                        var x = a as Ast.Variable;
-                        stats.Add(SetVariable(x, arg, Context));
-                    }
-                    else if (a is Ast.TableAccess)
-                    {
-                        var x = a as Ast.TableAccess;
+                    var x = var as Ast.TableAccess;
 
-                        var expression = GetFirstArgument(CompileExpression(x.Expression, Context));
-                        var index = GetFirstArgument(CompileExpression(x.Index, Context));
+                    var expression = GetFirstArgument(CompileExpression(x.Expression, Context));
+                    var index = GetFirstArgument(CompileExpression(x.Index, Context));
 
-                        var set = Expression.Property(expression, "Item", index);
-                        stats.Add(Expression.Assign(set, arg));
-                    }
-                    i++;
+                    var set = Expression.Property(expression, "Item", index);
+                    stats.Add(Expression.Assign(set, arg));
                 }
+                i++;
+            }
 
-                return Expression.Block(new[] {variable}, stats.ToArray());
+            return Expression.Block(new[] { variable }, stats.ToArray());
+        }
+
+        static Expression CompileFunctionCallStat(Ast.FunctionCall call, Expression Context)
+        {
+            var variable = Expression.Parameter(typeof(LuaArguments), "vars");
+            List<Expression> stats = new List<Expression>();
+
+            stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
+
+            var expression = GetFirstArgument(CompileExpression(call.Function, Context));
+
+            foreach (Ast.IExpression arg in call.Arguments)
+            {
+                var exp = GetFirstArgument(CompileExpression(arg, Context));
+                stats.Add(Expression.Call(variable, LuaArguments_Add, exp));
+            }
+            stats.Add(Expression.Call(expression, LuaObject_Call, variable));
+
+            return Expression.Block(new[] { variable }, stats.ToArray());
+        }
+
+        static Expression CompileBlock(Ast.Block block, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
+        {
+            List<Expression> exprs = new List<Expression>();
+            var scope = Expression.Parameter(LuaContext_Type, "scope");
+            var createScope = Expression.New(LuaContext_New_parent, Context);
+            var assignScope = Expression.Assign(scope, createScope);
+            exprs.Add(assignScope);
+
+            foreach (IStatement s in block.Statements)
+            {
+                exprs.Add(CompileStatement(s, returnTarget, breakTarget, scope));
+            }
+
+            return Expression.Block(new[] { scope }, exprs.ToArray());
+        }
+
+        static Expression CompileWhileStat(Ast.WhileStat stat, LabelTarget returnTarget, Expression Context)
+        {
+            var cond = GetFirstArgumentAsBool(CompileExpression(stat.Condition, Context));
+            var breakTarget = Expression.Label("break");
+            var loopBody = CompileBlock(stat.Block, returnTarget, breakTarget, Context);
+            var condition = Expression.IfThenElse(cond, loopBody, Expression.Break(breakTarget));
+            var loop = Expression.Loop(condition);
+
+            return Expression.Block(loop, Expression.Label(breakTarget));
+        }
+
+        static Expression CompileIfStat(Ast.IfStat ifstat, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
+        {
+            var condition = GetFirstArgumentAsBool(CompileExpression(ifstat.Condition, Context));
+            var block = CompileBlock(ifstat.Block, returnTarget, breakTarget, Context);
+
+            if (ifstat.ElseIfs.Count == 0)
+            {
+                if (ifstat.ElseBlock == null)
+                {
+                    return Expression.IfThen(condition, block);
+                }
+                else
+                {
+                    var elseBlock = CompileBlock(ifstat.ElseBlock, returnTarget, breakTarget, Context);
+                    return Expression.IfThenElse(condition, block, elseBlock);
+                }
             }
             throw new NotImplementedException();
         }
 
-        public delegate void TestFunc();
-
-        public static TestFunc Comp(IStatement expr, LuaContext ctx)
+        static Expression CompileReturnStat(Ast.ReturnStat ret, LabelTarget returnTarget, Expression Context)
         {
-            Expression e = CompileStatement(expr, Expression.Constant(ctx));
-            return Expression.Lambda<TestFunc>(e).Compile();
+            var variable = Expression.Parameter(LuaArguments_Type);
+            List<Expression> body = new List<Expression>();
+            var ctor = Expression.New(LuaArguments_New_void);
+            body.Add(Expression.Assign(variable, ctor));
+
+            int i = 0;
+            foreach (IExpression expr in ret.Expressions)
+            {
+                if (i == ret.Expressions.Count - 1)
+                {
+                    var exp = CompileExpression(expr, Context);
+                    body.Add(Expression.Call(variable, LuaArguments_Concat, exp));
+                }
+                else
+                {
+                    var exp = GetFirstArgument(CompileExpression(expr, Context));
+                    body.Add(Expression.Call(variable, LuaArguments_Add, exp));
+                }
+            }
+
+            body.Add(Expression.Return(returnTarget, variable));
+
+            return Expression.Block(new[] { variable }, body.ToArray());
+        }
+
+        static Expression CompileStatement(IStatement stat, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
+        {
+            if (stat is Ast.Assignment)
+            {
+                var assign = stat as Ast.Assignment;
+                return CompileAssignment(assign, Context);
+            }
+            else if (stat is Ast.FunctionCall)
+            {
+                var call = stat as Ast.FunctionCall;
+                return CompileFunctionCallStat(call, Context);
+            }
+            else if (stat is Ast.Block)
+            {
+                var block = stat as Ast.Block;
+                return CompileBlock(block, returnTarget, breakTarget, Context);
+            }
+            else if (stat is Ast.IfStat)
+            {
+                var ifstat = stat as Ast.IfStat;
+                return CompileIfStat(ifstat, returnTarget, breakTarget, Context);
+            }
+            else if (stat is Ast.ReturnStat)
+            {
+                var ret = stat as Ast.ReturnStat;
+                return CompileReturnStat(ret, returnTarget, Context);
+            }
+            else if (stat is Ast.BreakStat)
+            {
+                return Expression.Break(breakTarget);
+            }
+            else if (stat is Ast.WhileStat)
+            {
+                return CompileWhileStat(stat as Ast.WhileStat, returnTarget, Context);
+            }
+            else if (stat is Ast.RepeatStat)
+            {
+
+            }
+            throw new NotImplementedException();
+        }
+
+        public static LuaFunction CompileFunction(Ast.FunctionDefinition func, LuaContext ctx)
+        {
+            List<Expression> exprs = new List<Expression>();
+
+            var args = Expression.Parameter(LuaArguments_Type);
+            var label = Expression.Label(LuaArguments_Type, "exit");
+            var body = CompileBlock(func.Body, label, null, Expression.Constant(ctx));
+
+            exprs.Add(body);
+            exprs.Add(Expression.Label(label, Expression.Constant(VoidArguments)));
+
+            var funcBody = Expression.Block(new[] { args }, exprs.ToArray());
+            return Expression.Lambda<LuaFunction>(funcBody, args).Compile();
         }
     }
 }

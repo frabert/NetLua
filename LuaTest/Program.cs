@@ -58,14 +58,21 @@ namespace LuaTest
             MathLibrary.AddMathLibrary(lua.Context);
             IoLibrary.AddIoLibrary(lua.Context);
 
-            NetLua.Ast.Assignment assign = new NetLua.Ast.Assignment();
-            assign.Expressions.Add(new NetLua.Ast.Variable() { Name = "math" });
-            assign.Expressions.Add(new NetLua.Ast.Variable() { Name = "io" });
-            assign.Variables.Add(new NetLua.Ast.TableAccess() { Expression = new NetLua.Ast.Variable() { Name = "math" }, Index = new NetLua.Ast.StringLiteral() { Value = "prova" } });
-            assign.Variables.Add(new NetLua.Ast.Variable() { Name = "bah" });
+            NetLua.Ast.ReturnStat stat = new NetLua.Ast.ReturnStat();
+            stat.Expressions.Add(new NetLua.Ast.NumberLiteral() { Value = 1 });
+            stat.Expressions.Add(new NetLua.Ast.NumberLiteral() { Value = 2 });
 
-            var x = LuaCompiler.Comp(assign, lua.Context);
-            x();
+            NetLua.Ast.FunctionDefinition def = new NetLua.Ast.FunctionDefinition();
+            def.Body = new NetLua.Ast.Block();
+            def.Body.Statements.Add(stat);
+
+            LuaFunction func = LuaCompiler.CompileFunction(def, lua.Context);
+
+            var x = func(Lua.Return());
+
+
+            //var x = LuaCompiler.Comp(call, lua.Context);
+            //x();
 
             while (true)
             {

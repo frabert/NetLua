@@ -450,9 +450,18 @@ namespace NetLua
                     ReturnStat ret = stat as ReturnStat;
                     returned.returned = true;
                     List<LuaObject> values = new List<LuaObject>();
+                    int i = 0;
                     foreach (IExpression expr in ret.Expressions)
                     {
-                        values.AddRange(EvalExpression(expr, Context));
+                        if (i == ret.Expressions.Count - 1)
+                        {
+                            values.AddRange(EvalExpression(expr, Context));
+                        }
+                        else
+                        {
+                            values.Add(EvalExpression(expr, Context)[0]);
+                        }
+                        i++;
                     }
                     return values.ToArray();
                 }
