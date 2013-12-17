@@ -183,7 +183,35 @@ namespace NetLua
                 return CreateLuaArguments(GetVariable(expr as Ast.Variable, Context));
             if (expr is Ast.TableAccess)
                 return CreateLuaArguments(GetTableAccess(expr as Ast.TableAccess, Context));
+            if (expr is Ast.FunctionCall)
+                return CompileFunctionCallExpr(expr as Ast.FunctionCall, Context);
+            if (expr is Ast.FunctionDefinition)
+            {
+                return CreateLuaArguments(CompileFunction(expr as Ast.FunctionDefinition, Context));
+            }
+            if (expr is Ast.VarargsLiteral)
+                return CompileVarargs(Context);
+            if (expr is Ast.TableConstructor)
+                throw new NotImplementedException();
             throw new NotImplementedException();
+        }
+
+        static Expression CompileVarargs(Expression Context)
+        {
+            return Expression.Property(Context, "Varargs");
+        }
+
+        static Expression CompileFunctionCallExpr(Ast.FunctionCall expr, Expression Context)
+        {
+            var function = GetFirstArgument(CompileExpression(expr.Function, Context));
+            List<Expression> args = new List<Expression>();
+            foreach(IExpression e in expr.Arguments)
+            {
+                args.Add(GetFirstArgument(CompileExpression(expr, Context)));
+            }
+            var arg = Expression.NewArrayInit(LuaObject_Type, args.ToArray());
+            var luaarg = Expression.New(LuaArguments_New, arg);
+            return Expression.Call(function, LuaObject_Call, luaarg);
         }
 
         static Expression CompileAssignment(Ast.Assignment assign, Expression Context)
@@ -352,24 +380,71 @@ namespace NetLua
             }
             else if (stat is Ast.RepeatStat)
             {
-
+                throw new NotImplementedException();
+            }
+            else if (stat is Ast.GenericFor)
+            {
+                throw new NotImplementedException();
+            }
+            else if (stat is Ast.NumericFor)
+            {
+                throw new NotImplementedException();
             }
             throw new NotImplementedException();
         }
 
-        public static LuaFunction CompileFunction(Ast.FunctionDefinition func, LuaContext ctx)
+        public static ConstantExpression CompileFunction(Ast.FunctionDefinition func, Expression Context)
         {
             List<Expression> exprs = new List<Expression>();
 
-            var args = Expression.Parameter(LuaArguments_Type);
+            var args = Expression.Parameter(LuaArguments_Type, "args");
             var label = Expression.Label(LuaArguments_Type, "exit");
-            var body = CompileBlock(func.Body, label, null, Expression.Constant(ctx));
+            var @break = Expression.Label("break");
 
+            var scopeVar = Expression.Parameter(LuaContext_Type, "funcScope");
+            var assignScope = Expression.Assign(scopeVar, Expression.New(LuaContext_New_parent, Context));
+
+            #region Arguments init
+            var len = Expression.Property(args, "Length");
+            var argLen = Expression.Constant(func.Arguments.Count);
+            var argCount = Expression.Constant(func.Arguments.Count);
+
+            var i = Expression.Parameter(typeof(int), "i");
+            var assignI = Expression.Assign(i, Expression.Constant(0));
+            var names = Expression.Parameter(typeof(string[]), "names");
+            var assignNames = Expression.Assign(names, Expression.Constant(Array.ConvertAll<Argument, string>(func.Arguments.ToArray(), x => x.Name)));
+
+            var innerCond = Expression.LessThan(i, argLen);
+            var outerCond = Expression.LessThan(i, len);
+
+            var innerIf = Expression.Call(scopeVar, LuaContext_SetLocal, Expression.ArrayAccess(names, i), Expression.Property(args, "Item", i));
+            var varargs = Expression.Property(scopeVar, "Varargs");
+            var innerElse = Expression.Call(varargs, LuaArguments_Add, Expression.Property(args, "Item", i));
+
+            var outerIf = Expression.Block(Expression.IfThenElse(innerCond, innerIf, innerElse), Expression.Assign(i, Expression.Increment(i)));
+            var outerElse = Expression.Break(@break);
+
+            var loopBody = Expression.IfThenElse(outerCond, outerIf, outerElse);
+            var loop = Expression.Loop(loopBody);
+
+            var breakLabel = Expression.Label(@break);
+            #endregion
+
+            var body = CompileBlock(func.Body, label, null, scopeVar);
+
+            exprs.Add(assignScope);
+            exprs.Add(assignI);
+            exprs.Add(assignNames);
+            exprs.Add(loop);
+            exprs.Add(breakLabel);
             exprs.Add(body);
             exprs.Add(Expression.Label(label, Expression.Constant(VoidArguments)));
 
-            var funcBody = Expression.Block(new[] { args }, exprs.ToArray());
-            return Expression.Lambda<LuaFunction>(funcBody, args).Compile();
+            var funcBody = Expression.Block(new[] { i, names, scopeVar }, exprs.ToArray());
+
+            var function = Expression.Lambda<LuaFunction>(funcBody, args).Compile();
+            var luaobject = (LuaObject)function;
+            return Expression.Constant(luaobject);
         }
     }
 }

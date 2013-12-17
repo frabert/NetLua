@@ -23,7 +23,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 using NetLua.Ast;
@@ -86,7 +86,7 @@ namespace NetLua
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseFile(Filename);
-            return LuaCompiler.CompileFunction(def, ctx)(Lua.Return());
+            return (LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Value as LuaObject).Call(Lua.Return());
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace NetLua
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseString(Chunk);
-            return LuaCompiler.CompileFunction(def, ctx)(Lua.Return());
+            return (LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Value as LuaObject).Call(Lua.Return());
         }
 
         /// <summary>

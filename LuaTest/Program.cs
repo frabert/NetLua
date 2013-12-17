@@ -58,17 +58,17 @@ namespace LuaTest
             MathLibrary.AddMathLibrary(lua.Context);
             IoLibrary.AddIoLibrary(lua.Context);
 
-            NetLua.Ast.ReturnStat stat = new NetLua.Ast.ReturnStat();
+            /*NetLua.Ast.ReturnStat stat = new NetLua.Ast.ReturnStat();
             stat.Expressions.Add(new NetLua.Ast.NumberLiteral() { Value = 1 });
             stat.Expressions.Add(new NetLua.Ast.NumberLiteral() { Value = 2 });
 
             NetLua.Ast.FunctionDefinition def = new NetLua.Ast.FunctionDefinition();
             def.Body = new NetLua.Ast.Block();
-            def.Body.Statements.Add(stat);
+            def.Body.Statements.Add(stat);*/
 
-            LuaFunction func = LuaCompiler.CompileFunction(def, lua.Context);
+            //LuaFunction func = LuaCompiler.CompileFunction(def, lua.Context);
 
-            var x = func(Lua.Return());
+            //var x = func(Lua.Return());
 
 
             //var x = LuaCompiler.Comp(call, lua.Context);
