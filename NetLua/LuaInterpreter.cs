@@ -29,6 +29,7 @@ using NetLua.Ast;
 
 namespace NetLua
 {
+#if INTERPRETED
     public static class LuaInterpreter
     {
         internal struct LuaReturnStatus
@@ -124,7 +125,6 @@ namespace NetLua
                 }
                 args = values.ToArray();
             }
-            //return func.AsFunction()(args);
             return func.Call(args);
         }
 
@@ -528,4 +528,5 @@ namespace NetLua
             return obj;
         }
     }
+#endif
 }

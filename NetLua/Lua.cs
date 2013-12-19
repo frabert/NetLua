@@ -81,13 +81,18 @@ namespace NetLua
         /// <param name="Filename">The file to execute</param>
         public LuaArguments DoFile(string Filename)
         {
-            /*LuaInterpreter.LuaReturnStatus ret;
-            return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);*/
+            #if INTERPRETED
+            LuaInterpreter.LuaReturnStatus ret;
+            return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);
+            #endif
+
+            #if COMPILED
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseFile(Filename);
             var function = LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Compile();
             return function().Call(Lua.Return());
+            #endif
         }
 
         /// <summary>
@@ -95,13 +100,18 @@ namespace NetLua
         /// </summary>
         public LuaArguments DoString(string Chunk)
         {
-            /*LuaInterpreter.LuaReturnStatus ret;
-            return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);*/
+            #if INTERPRETED
+            LuaInterpreter.LuaReturnStatus ret;
+            return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);
+            #endif
+
+            #if COMPILED
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseString(Chunk);
             var function = LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Compile();
             return function().Call(Lua.Return());
+            #endif
         }
 
         /// <summary>

@@ -1,4 +1,27 @@
-﻿using System;
+﻿/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2013 Francesco Bertolaccini
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +32,7 @@ using NetLua.Ast;
 
 namespace NetLua
 {
+    #if COMPILED
     public static class LuaCompiler
     {
         static Type LuaContext_Type = typeof(LuaContext);
@@ -30,6 +54,7 @@ namespace NetLua
 
         static MethodInfo LuaEvents_eq = LuaEvents_Type.GetMethod("eq_event", BindingFlags.NonPublic | BindingFlags.Static);
         static MethodInfo LuaEvents_concat = LuaEvents_Type.GetMethod("concat_event", BindingFlags.NonPublic | BindingFlags.Static);
+        static MethodInfo LuaEvents_toNumber = LuaEvents_Type.GetMethod("toNumber", BindingFlags.NonPublic | BindingFlags.Static);
 
         static MethodInfo LuaObject_Call = LuaObject_Type.GetMethod("Call", new[] { LuaArguments_Type });
         static MethodInfo LuaObject_AsBool = LuaObject_Type.GetMethod("AsBool");
@@ -37,6 +62,11 @@ namespace NetLua
         static LuaArguments VoidArguments = new LuaArguments();
 
         #region Helpers
+        static Expression ToNumber(Expression Expression)
+        {
+            return Expression.Call(LuaEvents_toNumber, Expression);
+        }
+
         static Expression CreateLuaArguments(params Expression[] Expressions)
         {
             var array = Expression.NewArrayInit(typeof(LuaObject), Expressions);
@@ -59,6 +89,11 @@ namespace NetLua
         {
             Expression e = GetFirstArgument(Expression);
             return Expression.Call(e, LuaObject_AsBool);
+        }
+
+        static Expression GetAsBool(Expression Expression)
+        {
+            return Expression.Call(Expression, LuaObject_AsBool);
         }
 
         static Expression GetArgument(Expression Expression, int n)
@@ -365,7 +400,7 @@ namespace NetLua
             else
             {
                 var prefix = CompileSingleExpression(expr.Prefix, Context);
-                var index = Expression.Constant(expr.Name);
+                var index = Expression.Constant((LuaObject)(expr.Name));
                 var set = Expression.Property(prefix, "Item", index);
                 return Expression.Assign(set, value);
             }
@@ -474,7 +509,7 @@ namespace NetLua
 
         static Expression CompileWhileStat(Ast.WhileStat stat, LabelTarget returnTarget, Expression Context)
         {
-            var cond = GetFirstArgumentAsBool(CompileExpression(stat.Condition, Context));
+            var cond = GetAsBool(CompileSingleExpression(stat.Condition, Context));
             var breakTarget = Expression.Label("break");
             var loopBody = CompileBlock(stat.Block, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
             var condition = Expression.IfThenElse(cond, loopBody, Expression.Break(breakTarget));
@@ -485,7 +520,7 @@ namespace NetLua
 
         static Expression CompileIfStat(Ast.IfStat ifstat, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
         {
-            var condition = GetFirstArgumentAsBool(CompileExpression(ifstat.Condition, Context));
+            var condition = GetAsBool(CompileSingleExpression(ifstat.Condition, Context));
             var block = CompileBlock(ifstat.Block, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
 
             if (ifstat.ElseIfs.Count == 0)
@@ -499,6 +534,35 @@ namespace NetLua
                     var elseBlock = CompileBlock(ifstat.ElseBlock, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
                     return Expression.IfThenElse(condition, block, elseBlock);
                 }
+            }
+            else
+            {
+                Expression b = null;
+                for (int i = ifstat.ElseIfs.Count - 1; i >= 0; i--)
+                {
+                    IfStat branch = ifstat.ElseIfs[i];
+                    var cond = GetAsBool(CompileSingleExpression(branch.Condition, Context));
+                    var body = CompileBlock(branch.Block, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
+                    if (b == null)
+                    {
+                        if (ifstat.ElseBlock == null)
+                        {
+                            b = Expression.IfThen(cond, body);
+                        }
+                        else
+                        {
+                            var elseBlock = CompileBlock(ifstat.ElseBlock, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
+                            b = Expression.IfThenElse(cond, body, elseBlock);
+                        }
+                    }
+                    else
+                    {
+                        b = Expression.IfThenElse(cond, body, b);
+                    }
+                }
+
+                var tree = Expression.IfThenElse(condition, block, b);
+                return tree;
             }
             throw new NotImplementedException();
         }
@@ -528,6 +592,102 @@ namespace NetLua
             body.Add(Expression.Return(returnTarget, variable));
 
             return Expression.Block(new[] { variable }, body.ToArray());
+        }
+
+        static Expression CompileRepeatStatement(Ast.RepeatStat stat, LabelTarget returnTarget, Expression Context)
+        {
+            var ctx = Expression.New(LuaContext_New_parent, Context);
+            var scope = Expression.Parameter(LuaContext_Type);
+            var assignScope = Expression.Assign(scope, ctx);
+            var @break = Expression.Label();
+
+            var condition = GetAsBool(CompileSingleExpression(stat.Condition, scope));
+            var body = CompileBlock(stat.Block, returnTarget, @break, scope);
+            var check = Expression.IfThen(condition, Expression.Break(@break));
+            var loop = Expression.Loop(Expression.Block(body, check));
+            var block = Expression.Block(new[] { scope }, assignScope, loop, Expression.Label(@break));
+            return block;
+        }
+
+        static Expression CompileNumericFor(Ast.NumericFor stat, LabelTarget returnTarget, Expression Context)
+        {
+            var varValue = ToNumber(CompileSingleExpression(stat.Var, Context));
+            var limit = ToNumber(CompileSingleExpression(stat.Limit, Context));
+            var step = ToNumber(CompileSingleExpression(stat.Step, Context));
+
+            var var = Expression.Parameter(LuaObject_Type);
+            var scope = Expression.Parameter(LuaContext_Type);
+            var @break = Expression.Label();
+            var assignScope = Expression.Assign(scope, Expression.New(LuaContext_New_parent, Context));
+            var assignVar = Expression.Assign(var, varValue);
+
+            var condition =
+                Expression.Or(
+                    Expression.And(
+                        Expression.GreaterThan(step, Expression.Constant((LuaObject)0)),
+                        Expression.LessThanOrEqual(var, limit)),
+                    Expression.And(
+                        Expression.LessThanOrEqual(step, Expression.Constant((LuaObject)0)),
+                        Expression.GreaterThanOrEqual(var, limit)));
+            var setLocalVar = Expression.Call(scope, LuaContext_SetLocal, Expression.Constant(stat.Variable), var);
+            var innerBlock = CompileBlock(stat.Block, returnTarget, @break, scope);
+            var sum = Expression.Assign(var, Expression.Add(var, step));
+            var check = Expression.IfThenElse(GetAsBool(condition), Expression.Block(setLocalVar, innerBlock, sum), Expression.Break(@break));
+            var loop = Expression.Loop(check);
+
+            var body = Expression.Block(new[]{var, scope}, assignScope, assignVar, loop, Expression.Label(@break));
+
+            return body;
+        }
+
+        static Expression CompileGenericFor(Ast.GenericFor stat, LabelTarget returnTarget, Expression Context)
+        {
+            List<Expression> body = new List<Expression>();
+            var args = Expression.Parameter(LuaArguments_Type);
+            var f = GetArgument(args, 0);
+            var s = GetArgument(args, 1);
+            var var = GetArgument(args, 2);
+            var fVar = Expression.Parameter(LuaObject_Type);
+            var sVar = Expression.Parameter(LuaObject_Type);
+            var varVar = Expression.Parameter(LuaObject_Type);
+            var scope = Expression.Parameter(LuaContext_Type);
+
+            var @break = Expression.Label();
+
+            body.Add(Expression.Assign(args, Expression.New(LuaArguments_New_void)));
+            foreach (IExpression expr in stat.Expressions)
+            {
+                body.Add(Expression.Call(args, LuaArguments_Concat,CompileExpression(expr, Context)));
+            }
+            body.Add(Expression.Assign(fVar, f));
+            body.Add(Expression.Assign(sVar, s));
+            body.Add(Expression.Assign(varVar, var));
+
+            body.Add(Expression.Assign(scope, Expression.New(LuaContext_New_parent, Context)));
+
+            var res = Expression.Parameter(LuaArguments_Type);
+            var buildArgs = Expression.New(LuaArguments_New, Expression.NewArrayInit(typeof(LuaObject), sVar, varVar));
+            var resAssign = Expression.Assign(res, Expression.Call(fVar, LuaObject_Call, buildArgs));
+            List<Expression> exprs = new List<Expression>();
+            exprs.Add(resAssign);
+            for (int i = 0; i < stat.Variables.Count; i++)
+            {
+                var val = GetArgument(res, i);
+                exprs.Add(Expression.Call(scope, LuaContext_SetLocal, Expression.Constant(stat.Variables[i]), val));
+            }
+            var check = Expression.IfThen(Expression.Property(GetArgument(res, 0), "IsNil"), Expression.Break(@break));
+            exprs.Add(check);
+            exprs.Add(Expression.Assign(varVar, GetFirstArgument(res)));
+            exprs.Add(CompileBlock(stat.Block, returnTarget, @break, scope));
+
+            var loopBody = Expression.Block(new[] { res }, exprs.ToArray());
+            var loop = Expression.Loop(loopBody);
+            body.Add(loop);
+            body.Add(Expression.Label(@break));
+
+            var block = Expression.Block(new[] { args, scope, fVar, sVar, varVar }, body.ToArray());
+
+            return block;
         }
 
         static Expression CompileStatement(IStatement stat, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
@@ -572,18 +732,19 @@ namespace NetLua
             }
             else if (stat is Ast.RepeatStat)
             {
-                throw new NotImplementedException();
+                return CompileRepeatStatement(stat as Ast.RepeatStat, returnTarget, Context);
             }
             else if (stat is Ast.GenericFor)
             {
-                throw new NotImplementedException();
+                return CompileGenericFor(stat as Ast.GenericFor, returnTarget, Context);
             }
             else if (stat is Ast.NumericFor)
             {
-                throw new NotImplementedException();
+                return CompileNumericFor(stat as Ast.NumericFor, returnTarget, Context);
             }
             throw new NotImplementedException();
         }
         #endregion
     }
+    #endif
 }
