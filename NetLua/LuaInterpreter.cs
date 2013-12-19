@@ -204,13 +204,22 @@ namespace NetLua
                     // every return value to the table
                 {
                     LuaObject key = EvalExpression(pair.Key, Context)[0];
-                    LuaArguments values = EvalExpression(pair.Value, Context);
-
-                    double k = key;
-                    foreach (LuaObject v in values)
+                    if (key.IsNumber)
                     {
-                        table.Add(k, v);
-                        k++;
+                        LuaArguments values = EvalExpression(pair.Value, Context);
+
+                        double k = key;
+                        foreach (LuaObject v in values)
+                        {
+                            table.Add(k, v);
+                            k++;
+                        }
+                    }
+                    else
+                    {
+                        LuaObject value = EvalExpression(pair.Value, Context)[0];
+
+                        table.Add(key, value);
                     }
                 }
                 else

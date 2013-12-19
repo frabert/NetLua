@@ -104,9 +104,10 @@ namespace NetLua
             list.Add(obj);
         }
 
-        public void Concat(LuaArguments args)
+        public LuaArguments Concat(LuaArguments args)
         {
             list.AddRange(args.list);
+            return this;
         }
 
         public IEnumerator<LuaObject> GetEnumerator()
