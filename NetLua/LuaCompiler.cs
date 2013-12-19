@@ -76,7 +76,7 @@ namespace NetLua
 
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
         {
-            Expression left = GetFirstArgument(CompileExpression(expr.Left, Context)), right = GetFirstArgument(CompileExpression(expr.Right, Context));
+            Expression left = CompileSingleExpression(expr.Left, Context), right = CompileSingleExpression(expr.Right, Context);
             switch (expr.Operation)
             {
                 case BinaryOp.Addition:
@@ -136,15 +136,15 @@ namespace NetLua
             }
             else
             {
-                Expression p = GetFirstArgument(CompileExpression(expr.Prefix, Context));
+                Expression p = CompileSingleExpression(expr.Prefix, Context);
                 return Expression.Property(p, "Item", Expression.Convert(Expression.Constant(expr.Name), LuaObject_Type));
             }
         }
 
         static Expression GetTableAccess(Ast.TableAccess expr, Expression Context)
         {
-            Expression e = GetFirstArgument(CompileExpression(expr.Expression, Context));
-            Expression i = GetFirstArgument(CompileExpression(expr.Index, Context));
+            Expression e = CompileSingleExpression(expr.Expression, Context);
+            Expression i = CompileSingleExpression(expr.Index, Context);
 
             return Expression.Property(e, "Item", i);
         }
@@ -157,7 +157,7 @@ namespace NetLua
             }
             else
             {
-                var prefix = GetFirstArgument(CompileExpression(expr.Prefix, Context));
+                var prefix = CompileSingleExpression(expr.Prefix, Context);
                 var index = Expression.Constant(expr.Name);
                 var set = Expression.Property(prefix, "Item", index);
                 return Expression.Assign(set, value);
@@ -238,7 +238,7 @@ namespace NetLua
             {
                 if (i == table.Values.Count - 1)
                 {
-                    var k = GetFirstArgument(CompileExpression(kvpair.Key, Context));
+                    var k = CompileSingleExpression(kvpair.Key, Context);
                     var v = CompileExpression(kvpair.Value, Context);
                     var singlev = GetFirstArgument(v);
                     var ifFalse = Expression.Call(variable, add, k, singlev);
@@ -262,8 +262,8 @@ namespace NetLua
                 }
                 else
                 {
-                    var k = GetFirstArgument(CompileExpression(kvpair.Key, Context));
-                    var v = GetFirstArgument(CompileExpression(kvpair.Value, Context));
+                    var k = CompileSingleExpression(kvpair.Key, Context);
+                    var v = CompileSingleExpression(kvpair.Value, Context);
 
                     exprs.Add(Expression.Call(variable, add, k, v));
                 }
@@ -289,7 +289,7 @@ namespace NetLua
 
         static Expression CompileFunctionCallExpr(Ast.FunctionCall expr, Expression Context)
         {
-            var function = GetFirstArgument(CompileExpression(expr.Function, Context));
+            var function = CompileSingleExpression(expr.Function, Context);
             List<Expression> args = new List<Expression>();
             Expression lastArg = null;
             int i = 0;
@@ -301,7 +301,7 @@ namespace NetLua
                 }
                 else
                 {
-                    args.Add(GetFirstArgument(CompileExpression(e, Context)));
+                    args.Add(CompileSingleExpression(e, Context));
                 }
                 i++;
             }
@@ -338,8 +338,8 @@ namespace NetLua
                 {
                     var x = var as Ast.TableAccess;
 
-                    var expression = GetFirstArgument(CompileExpression(x.Expression, Context));
-                    var index = GetFirstArgument(CompileExpression(x.Index, Context));
+                    var expression = CompileSingleExpression(x.Expression, Context);
+                    var index = CompileSingleExpression(x.Index, Context);
 
                     var set = Expression.Property(expression, "Item", index);
                     stats.Add(Expression.Assign(set, arg));
@@ -379,7 +379,7 @@ namespace NetLua
 
             stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
 
-            var expression = GetFirstArgument(CompileExpression(call.Function, Context));
+            var expression = CompileSingleExpression(call.Function, Context);
             int i = 0;
 
             foreach (Ast.IExpression arg in call.Arguments)
@@ -391,7 +391,7 @@ namespace NetLua
                 }
                 else
                 {
-                    var exp = GetFirstArgument(CompileExpression(arg, Context));
+                    var exp = CompileSingleExpression(arg, Context);
                     stats.Add(Expression.Call(variable, LuaArguments_Add, exp));
                 }
                 i++;
@@ -463,7 +463,7 @@ namespace NetLua
                 }
                 else
                 {
-                    var exp = GetFirstArgument(CompileExpression(expr, Context));
+                    var exp = CompileSingleExpression(expr, Context);
                     body.Add(Expression.Call(variable, LuaArguments_Add, exp));
                 }
             }
