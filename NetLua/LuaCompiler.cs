@@ -74,6 +74,7 @@ namespace NetLua
         }
         #endregion
 
+        #region Expressions
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
         {
             Expression left = CompileSingleExpression(expr.Left, Context), right = CompileSingleExpression(expr.Right, Context);
@@ -149,21 +150,7 @@ namespace NetLua
             return Expression.Property(e, "Item", i);
         }
 
-        static Expression SetVariable(Ast.Variable expr, Expression value, Expression Context)
-        {
-            if (expr.Prefix == null)
-            {
-                return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), value);
-            }
-            else
-            {
-                var prefix = CompileSingleExpression(expr.Prefix, Context);
-                var index = Expression.Constant(expr.Name);
-                var set = Expression.Property(prefix, "Item", index);
-                return Expression.Assign(set, value);
-            }
-        }
-
+        // This function returns a Expression with type LuaArguments. Similar to CompileSingleExpression
         static Expression CompileExpression(IExpression expr, Expression Context)
         {
             if (expr is NumberLiteral)
@@ -194,6 +181,7 @@ namespace NetLua
             throw new NotImplementedException();
         }
 
+        // This function returns a Expression with type LuaObject. Similar to CompileExpression
         static Expression CompileSingleExpression(IExpression expr, Expression Context)
         {
             if (expr is NumberLiteral)
@@ -232,7 +220,7 @@ namespace NetLua
             var type = typeof(Dictionary<LuaObject, LuaObject>);
             var add = type.GetMethod("Add", new[] { LuaObject_Type, LuaObject_Type });
             var variable = Expression.Parameter(type);
-            var assign = Expression.Assign(variable, Expression.New(type.GetConstructor(new Type[]{})));
+            var assign = Expression.Assign(variable, Expression.New(type.GetConstructor(new Type[] { })));
             exprs.Add(assign);
             foreach (KeyValuePair<IExpression, IExpression> kvpair in table.Values)
             {
@@ -281,9 +269,6 @@ namespace NetLua
 
         static Expression CompileFunctionDef(FunctionDefinition def, Expression Context)
         {
-            //var func = typeof(LuaCompiler).GetMethod("CompileFunction");
-            //var fdef = Expression.Constant(def);
-            //return Expression.Call(func, fdef, Context);
             return Expression.Invoke(CompileFunction(def, Context));
         }
 
@@ -312,6 +297,78 @@ namespace NetLua
                 return Expression.Call(function, LuaObject_Call, luaarg);
             else
                 return Expression.Call(function, LuaObject_Call, Expression.Call(luaarg, LuaArguments_Concat, lastArg));
+        }
+
+        public static Expression<Func<LuaObject>> CompileFunction(Ast.FunctionDefinition func, Expression Context)
+        {
+            List<Expression> exprs = new List<Expression>();
+
+            var args = Expression.Parameter(LuaArguments_Type, "args");
+            var label = Expression.Label(LuaArguments_Type, "exit");
+            var @break = Expression.Label("break");
+
+            var scopeVar = Expression.Parameter(LuaContext_Type, "funcScope");
+            var assignScope = Expression.Assign(scopeVar, Expression.New(LuaContext_New_parent, Context));
+
+            #region Arguments init
+            var len = Expression.Property(args, "Length");
+            var argLen = Expression.Constant(func.Arguments.Count);
+            var argCount = Expression.Constant(func.Arguments.Count);
+
+            var i = Expression.Parameter(typeof(int), "i");
+            var assignI = Expression.Assign(i, Expression.Constant(0));
+            var names = Expression.Parameter(typeof(string[]), "names");
+            var assignNames = Expression.Assign(names, Expression.Constant(Array.ConvertAll<Argument, string>(func.Arguments.ToArray(), x => x.Name)));
+
+            var innerCond = Expression.LessThan(i, argLen);
+            var outerCond = Expression.LessThan(i, len);
+
+            var innerIf = Expression.Call(scopeVar, LuaContext_SetLocal, Expression.ArrayAccess(names, i), Expression.Property(args, "Item", i));
+            var varargs = Expression.Property(scopeVar, "Varargs");
+            var innerElse = Expression.Call(varargs, LuaArguments_Add, Expression.Property(args, "Item", i));
+
+            var outerIf = Expression.Block(Expression.IfThenElse(innerCond, innerIf, innerElse), Expression.Assign(i, Expression.Add(i, Expression.Constant(1))));
+            var outerElse = Expression.Break(@break);
+
+            var loopBody = Expression.IfThenElse(outerCond, outerIf, outerElse);
+            var loop = Expression.Loop(loopBody);
+
+            var breakLabel = Expression.Label(@break);
+            #endregion
+
+            var body = CompileBlock(func.Body, label, null, scopeVar);
+
+            exprs.Add(assignScope);
+            exprs.Add(assignI);
+            exprs.Add(assignNames);
+            exprs.Add(loop);
+            exprs.Add(breakLabel);
+            exprs.Add(body);
+            exprs.Add(Expression.Label(label, Expression.Constant(VoidArguments)));
+
+            var funcBody = Expression.Block(new[] { i, names, scopeVar }, exprs.ToArray());
+
+            var function = Expression.Lambda<LuaFunction>(funcBody, args); //.Compile();
+            var returnValue = Expression.Lambda<Func<LuaObject>>(Expression.Convert(function, LuaObject_Type), null);
+            //var luaobject = (LuaObject)function;
+            return returnValue;
+        }
+        #endregion
+
+        #region Statements
+        static Expression SetVariable(Ast.Variable expr, Expression value, Expression Context)
+        {
+            if (expr.Prefix == null)
+            {
+                return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), value);
+            }
+            else
+            {
+                var prefix = CompileSingleExpression(expr.Prefix, Context);
+                var index = Expression.Constant(expr.Name);
+                var set = Expression.Property(prefix, "Item", index);
+                return Expression.Assign(set, value);
+            }
         }
 
         static Expression CompileAssignment(Ast.Assignment assign, Expression Context)
@@ -527,60 +584,6 @@ namespace NetLua
             }
             throw new NotImplementedException();
         }
-
-        public static Expression<Func<LuaObject>> CompileFunction(Ast.FunctionDefinition func, Expression Context)
-        {
-            List<Expression> exprs = new List<Expression>();
-
-            var args = Expression.Parameter(LuaArguments_Type, "args");
-            var label = Expression.Label(LuaArguments_Type, "exit");
-            var @break = Expression.Label("break");
-
-            var scopeVar = Expression.Parameter(LuaContext_Type, "funcScope");
-            var assignScope = Expression.Assign(scopeVar, Expression.New(LuaContext_New_parent, Context));
-
-            #region Arguments init
-            var len = Expression.Property(args, "Length");
-            var argLen = Expression.Constant(func.Arguments.Count);
-            var argCount = Expression.Constant(func.Arguments.Count);
-
-            var i = Expression.Parameter(typeof(int), "i");
-            var assignI = Expression.Assign(i, Expression.Constant(0));
-            var names = Expression.Parameter(typeof(string[]), "names");
-            var assignNames = Expression.Assign(names, Expression.Constant(Array.ConvertAll<Argument, string>(func.Arguments.ToArray(), x => x.Name)));
-
-            var innerCond = Expression.LessThan(i, argLen);
-            var outerCond = Expression.LessThan(i, len);
-
-            var innerIf = Expression.Call(scopeVar, LuaContext_SetLocal, Expression.ArrayAccess(names, i), Expression.Property(args, "Item", i));
-            var varargs = Expression.Property(scopeVar, "Varargs");
-            var innerElse = Expression.Call(varargs, LuaArguments_Add, Expression.Property(args, "Item", i));
-
-            var outerIf = Expression.Block(Expression.IfThenElse(innerCond, innerIf, innerElse), Expression.Assign(i, Expression.Add(i, Expression.Constant(1))));
-            var outerElse = Expression.Break(@break);
-
-            var loopBody = Expression.IfThenElse(outerCond, outerIf, outerElse);
-            var loop = Expression.Loop(loopBody);
-
-            var breakLabel = Expression.Label(@break);
-            #endregion
-
-            var body = CompileBlock(func.Body, label, null, scopeVar);
-
-            exprs.Add(assignScope);
-            exprs.Add(assignI);
-            exprs.Add(assignNames);
-            exprs.Add(loop);
-            exprs.Add(breakLabel);
-            exprs.Add(body);
-            exprs.Add(Expression.Label(label, Expression.Constant(VoidArguments)));
-
-            var funcBody = Expression.Block(new[] { i, names, scopeVar }, exprs.ToArray());
-
-            var function = Expression.Lambda<LuaFunction>(funcBody, args); //.Compile();
-            var returnValue = Expression.Lambda<Func<LuaObject>>(Expression.Convert(function, LuaObject_Type), null);
-            //var luaobject = (LuaObject)function;
-            return returnValue;
-        }
+        #endregion
     }
 }
