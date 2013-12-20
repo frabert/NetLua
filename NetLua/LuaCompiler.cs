@@ -54,6 +54,7 @@ namespace NetLua
 
         static MethodInfo LuaEvents_eq = LuaEvents_Type.GetMethod("eq_event", BindingFlags.NonPublic | BindingFlags.Static);
         static MethodInfo LuaEvents_concat = LuaEvents_Type.GetMethod("concat_event", BindingFlags.NonPublic | BindingFlags.Static);
+        static MethodInfo LuaEvents_len = LuaEvents_Type.GetMethod("len_event", BindingFlags.NonPublic | BindingFlags.Static);
         static MethodInfo LuaEvents_toNumber = LuaEvents_Type.GetMethod("toNumber", BindingFlags.NonPublic | BindingFlags.Static);
 
         static MethodInfo LuaObject_Call = LuaObject_Type.GetMethod("Call", new[] { LuaArguments_Type });
@@ -151,7 +152,7 @@ namespace NetLua
 
         static Expression CompileUnaryExpression(Ast.UnaryExpression expr, Expression Context)
         {
-            Expression e = CompileExpression(expr.Expression, Context);
+            Expression e = CompileSingleExpression(expr.Expression, Context);
             switch (expr.Operation)
             {
                 case UnaryOp.Invert:
@@ -159,7 +160,7 @@ namespace NetLua
                 case UnaryOp.Negate:
                     return Expression.Not(e);
                 case UnaryOp.Length:
-                    throw new NotImplementedException();
+                    return Expression.Call(LuaEvents_len, e);
             }
             throw new NotImplementedException();
         }
