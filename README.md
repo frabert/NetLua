@@ -66,3 +66,7 @@ double d = luaVariable.someFunc(a); // Automatic function arguments and result b
 
 lua.DynamicContext.x = 5;
 ```
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/frabert/netlua/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
