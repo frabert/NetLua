@@ -69,4 +69,4 @@ lua.DynamicContext.x = 5;
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/frabert/netlua/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
+[![Build status](https://ci.appveyor.com/api/projects/status?id=l548w3aa5lcj92r3)](https://ci.appveyor.com/project/netlua)
