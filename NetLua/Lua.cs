@@ -21,16 +21,21 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if COMPILED && INTERPRETED
+#error Please specify only COMPILED or INTERPRETED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using System.Dynamic;
 
 using NetLua.Ast;
 
 namespace NetLua
 {
-    public class Lua
+    public class Lua : DynamicObject
     {
         LuaContext ctx = new LuaContext();
         Parser p = new Parser();
@@ -135,6 +140,32 @@ namespace NetLua
                 return ctx;
             }
         }
+
+        #region Dynamic methods
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            result = null;
+            LuaObject obj = ctx.Get(binder.Name);
+            if (obj.IsNil)
+                return false;
+            else
+            {
+                result = LuaObject.getObject(obj);
+                return true;
+            }
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            if (value is LuaObject)
+                ctx.Set(binder.Name, value as LuaObject);
+            else
+                ctx.Set(binder.Name, LuaObject.FromObject(value));
+            return true;
+        }
+
+        #endregion
 
         #region Basic functions
 

@@ -50,6 +50,7 @@ namespace NetLua
 
         static ConstructorInfo LuaContext_New_parent = LuaContext_Type.GetConstructor(new[] { typeof(LuaContext) });
         static ConstructorInfo LuaArguments_New = LuaArguments_Type.GetConstructor(new[] { typeof(LuaObject[]) });
+        static ConstructorInfo LuaArguments_New_arglist = LuaArguments_Type.GetConstructor(new[] { typeof(LuaArguments[]) });
         static ConstructorInfo LuaArguments_New_void = LuaArguments_Type.GetConstructor(new Type[] { });
 
         static MethodInfo LuaEvents_eq = LuaEvents_Type.GetMethod("eq_event", BindingFlags.NonPublic | BindingFlags.Static);

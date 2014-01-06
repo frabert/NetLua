@@ -58,11 +58,19 @@ namespace LuaTest
             MathLibrary.AddMathLibrary(lua.Context);
             IoLibrary.AddIoLibrary(lua.Context);
 
+            dynamic l = new Lua();
+            //var x = l.Context;
+            l.print = (LuaFunction)print;
+            l.read = (LuaFunction)read;
+
+
+
             //lua.DoFile("C:\\Users\\Francesco\\life.lua");
 
             while (true)
             {
-                lua.DoString(Console.ReadLine());
+                //lua.DoString(Console.ReadLine());
+                l.DoString(Console.ReadLine());
             }
         }
     }
