@@ -58,13 +58,13 @@ Using .NET 4.0 dynamic features
 -------------------------------
 
 ```c#
-Lua lua = new Lua();
-dynamic luaVariable = lua.DynamicContext.var; // Lua.DynamicContext provides a dynamic version of Lua.Context
+dynamic lua = new Lua();
+dynamic luaVariable = lua.var; // Lua.DynamicContext provides a dynamic version of Lua.Context
 
 double a = luaVariable.numberValue; // Automatic type casting
 double d = luaVariable.someFunc(a); // Automatic function arguments and result boxing / unboxing
 
-lua.DynamicContext.x = 5;
+lua.x = 5;
 ```
 
 
