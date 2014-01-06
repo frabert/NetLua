@@ -420,8 +420,8 @@ namespace NetLua
                 return op1.AsNumber() < op2.AsNumber();
             else if (op1.IsString && op2.IsString)
             {
-                //TODO: Implement alphabetical check for strings
-                throw new NotImplementedException();
+                int n = StringComparer.CurrentCulture.Compare(op1.AsString(), op2.AsString());
+                return (n < 0);
             }
             else
             {
@@ -438,8 +438,10 @@ namespace NetLua
             if (op1.IsNumber && op2.IsNumber)
                 return op1.AsNumber() <= op2.AsNumber();
             else if (op1.IsString && op2.IsString)
-                //TODO: Implement alphabetical check for strings
-                throw new NotImplementedException();
+            {
+                int n = StringComparer.CurrentCulture.Compare(op1.AsString(), op2.AsString());
+                return (n <= 0);
+            }
             else
             {
                 var handler = getBinhandler(op1, op2, "__le");
