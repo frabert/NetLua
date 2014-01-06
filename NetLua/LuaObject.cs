@@ -434,7 +434,7 @@ namespace NetLua
             return fn;
         }
         #endregion
-
+        
         #region Table
         /// <summary>
         /// Creates a Lua object from a Lua table
@@ -469,6 +469,7 @@ namespace NetLua
         }
         #endregion
 
+        #region Userdata
         /// <summary>
         /// Creates a Lua object from a .NET object
         /// </summary>
@@ -490,10 +491,14 @@ namespace NetLua
         /// </summary>
         public bool IsUserData { get { return type == LuaType.userdata; } }
 
+        /// <summary>
+        /// Returns the CLI object underneath the wrapper
+        /// </summary>
         public object AsUserData()
         {
             return luaobj;
         }
+        #endregion
 
         public static LuaObject operator +(LuaObject a, LuaObject b)
         {

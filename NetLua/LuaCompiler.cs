@@ -276,7 +276,12 @@ namespace NetLua
                     var assignCounter = Expression.Assign(counter, Expression.Constant(0));
                     var incrementCounter = Expression.Assign(counter, Expression.Increment(counter));
                     var loopCondition = Expression.LessThan(counter, Expression.Property(v, "Length"));
-                    var addValue = Expression.Call(variable, add, Expression.Add(k, Expression.Call(LuaObject_Type.GetMethod("FromNumber"), Expression.Convert(counter, typeof(double)))), Expression.Property(value, "Item", counter));
+                    var addValue = Expression.Call(variable, add,
+                        Expression.Add(k,
+                            Expression.Call(LuaObject_Type.GetMethod("FromNumber"),
+                                Expression.Convert(counter, typeof(double) ) ) ),
+                        Expression.Property(value, "Item", counter) );
+
                     var check = Expression.IfThenElse(loopCondition, Expression.Block(addValue, incrementCounter), Expression.Break(@break));
                     var loopBody = Expression.Loop(check);
                     var ifTrue = Expression.Block(new[] { counter, value }, assignCounter, assignValue, loopBody, breakLabel);

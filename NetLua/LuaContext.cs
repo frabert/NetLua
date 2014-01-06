@@ -59,10 +59,7 @@ namespace NetLua
         /// </summary>
         public void SetLocal(string Name, LuaObject Value)
         {
-            if (!variables.ContainsKey(Name))
-                variables.Add(Name, Value);
-            else
-                variables[Name] = Value;
+            variables[Name] = Value;
         }
 
         /// <summary>
@@ -71,7 +68,7 @@ namespace NetLua
         public void SetGlobal(string Name, LuaObject Value)
         {
             if (parent == null)
-                SetLocal(Name, Value);
+                variables[Name] = Value;
             else
                 parent.SetGlobal(Name, Value);
         }
@@ -96,7 +93,7 @@ namespace NetLua
         {
             if (parent == null || variables.ContainsKey(Name))
             {
-                SetLocal(Name, Value);
+                variables[Name] = Value;
             }
             else
             {

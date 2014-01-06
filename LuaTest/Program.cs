@@ -65,7 +65,7 @@ namespace LuaTest
 
 
 
-            //lua.DoFile("C:\\Users\\Francesco\\life.lua");
+            lua.DoFile("C:\\Users\\Francesco\\life.lua");
 
             while (true)
             {
