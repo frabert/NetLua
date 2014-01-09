@@ -78,12 +78,11 @@ namespace NetLua
         /// </summary>
         public LuaObject Get(string Name)
         {
-            if (variables.ContainsKey(Name))
-                return variables[Name];
-            else if (parent != null)
-                return parent.Get(Name);
+            var obj = LuaObject.Nil;
+            if (variables.TryGetValue(Name, out obj) || parent == null)
+                return obj;
             else
-                return LuaObject.Nil;
+                return parent.Get(Name);
         }
 
         /// <summary>
@@ -91,14 +90,11 @@ namespace NetLua
         /// </summary>
         public void Set(string Name, LuaObject Value)
         {
-            if (parent == null || variables.ContainsKey(Name))
-            {
+            var obj = LuaObject.Nil;
+            if (parent == null || variables.TryGetValue(Name, out obj))
                 variables[Name] = Value;
-            }
             else
-            {
                 parent.Set(Name, Value);
-            }
         }
 
         internal LuaArguments Varargs

@@ -69,8 +69,8 @@ namespace LuaTest
 
             while (true)
             {
-                //lua.DoString(Console.ReadLine());
-                l.DoString(Console.ReadLine());
+                lua.DoString(Console.ReadLine());
+                //l.DoString(Console.ReadLine());
             }
         }
     }

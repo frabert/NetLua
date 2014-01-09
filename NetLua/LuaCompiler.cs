@@ -78,13 +78,9 @@ namespace NetLua
         static Expression GetFirstArgument(Expression Expression)
         {
             if (Expression.Type == typeof(LuaArguments))
-            {
                 return Expression.Property(Expression, "Item", Expression.Constant(0));
-            }
             else
-            {
                 return Expression.ArrayAccess(Expression, Expression.Constant(0));
-            }
         }
 
         static Expression GetFirstArgumentAsBool(Expression Expression)
@@ -101,20 +97,17 @@ namespace NetLua
         static Expression GetArgument(Expression Expression, int n)
         {
             if (Expression.Type == typeof(LuaArguments))
-            {
                 return Expression.Property(Expression, "Item", Expression.Constant(n));
-            }
             else
-            {
                 return Expression.ArrayAccess(Expression, Expression.Constant(n));
-            }
         }
         #endregion
 
         #region Expressions
         static Expression CompileBinaryExpression(Ast.BinaryExpression expr, Expression Context)
         {
-            Expression left = CompileSingleExpression(expr.Left, Context), right = CompileSingleExpression(expr.Right, Context);
+            var left = CompileSingleExpression(expr.Left, Context);
+            var right = CompileSingleExpression(expr.Right, Context);
             switch (expr.Operation)
             {
                 case BinaryOp.Addition:
@@ -153,7 +146,7 @@ namespace NetLua
 
         static Expression CompileUnaryExpression(Ast.UnaryExpression expr, Expression Context)
         {
-            Expression e = CompileSingleExpression(expr.Expression, Context);
+            var e = CompileSingleExpression(expr.Expression, Context);
             switch (expr.Operation)
             {
                 case UnaryOp.Invert:
@@ -169,9 +162,7 @@ namespace NetLua
         static Expression GetVariable(Ast.Variable expr, Expression Context)
         {
             if (expr.Prefix == null)
-            {
                 return Expression.Call(Context, LuaContext_Get, Expression.Constant(expr.Name));
-            }
             else
             {
                 Expression p = CompileSingleExpression(expr.Prefix, Context);
@@ -181,8 +172,8 @@ namespace NetLua
 
         static Expression GetTableAccess(Ast.TableAccess expr, Expression Context)
         {
-            Expression e = CompileSingleExpression(expr.Expression, Context);
-            Expression i = CompileSingleExpression(expr.Index, Context);
+            var e = CompileSingleExpression(expr.Expression, Context);
+            var i = CompileSingleExpression(expr.Index, Context);
 
             return Expression.Property(e, "Item", i);
         }
@@ -251,9 +242,9 @@ namespace NetLua
 
         static Expression CompileTableConstructor(Ast.TableConstructor table, Expression Context)
         {
-            List<KeyValuePair<Expression, Expression>> values = new List<KeyValuePair<Expression, Expression>>();
+            var values = new List<KeyValuePair<Expression, Expression>>();
             int i = 0;
-            List<Expression> exprs = new List<Expression>();
+            var exprs = new List<Expression>();
             var type = typeof(Dictionary<LuaObject, LuaObject>);
             var add = type.GetMethod("Add", new[] { LuaObject_Type, LuaObject_Type });
             var variable = Expression.Parameter(type);
@@ -317,19 +308,15 @@ namespace NetLua
         static Expression CompileFunctionCallExpr(Ast.FunctionCall expr, Expression Context)
         {
             var function = CompileSingleExpression(expr.Function, Context);
-            List<Expression> args = new List<Expression>();
+            var args = new List<Expression>();
             Expression lastArg = null;
             int i = 0;
             foreach (IExpression e in expr.Arguments)
             {
                 if (i == expr.Arguments.Count - 1)
-                {
                     lastArg = CompileExpression(e, Context);
-                }
                 else
-                {
                     args.Add(CompileSingleExpression(e, Context));
-                }
                 i++;
             }
             var arg = Expression.NewArrayInit(LuaObject_Type, args.ToArray());
@@ -343,7 +330,7 @@ namespace NetLua
 
         public static Expression<Func<LuaObject>> CompileFunction(Ast.FunctionDefinition func, Expression Context)
         {
-            List<Expression> exprs = new List<Expression>();
+            var exprs = new List<Expression>();
 
             var args = Expression.Parameter(LuaArguments_Type, "args");
             var label = Expression.Label(LuaArguments_Type, "exit");
@@ -401,9 +388,7 @@ namespace NetLua
         static Expression SetVariable(Ast.Variable expr, Expression value, Expression Context)
         {
             if (expr.Prefix == null)
-            {
                 return Expression.Call(Context, LuaContext_Set, Expression.Constant(expr.Name), value);
-            }
             else
             {
                 var prefix = CompileSingleExpression(expr.Prefix, Context);
@@ -416,7 +401,7 @@ namespace NetLua
         static Expression CompileAssignment(Ast.Assignment assign, Expression Context)
         {
             var variable = Expression.Parameter(typeof(LuaArguments), "vars");
-            List<Expression> stats = new List<Expression>();
+            var stats = new List<Expression>();
 
             stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
             foreach (IExpression expr in assign.Expressions)
@@ -452,7 +437,7 @@ namespace NetLua
         static Expression CompileLocalAssignment(Ast.LocalAssignment assign, Expression Context)
         {
             var variable = Expression.Parameter(typeof(LuaArguments), "vars");
-            List<Expression> stats = new List<Expression>();
+            var stats = new List<Expression>();
 
             stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
             foreach (IExpression expr in assign.Values)
@@ -474,7 +459,7 @@ namespace NetLua
         static Expression CompileFunctionCallStat(Ast.FunctionCall call, Expression Context)
         {
             var variable = Expression.Parameter(typeof(LuaArguments), "vars");
-            List<Expression> stats = new List<Expression>();
+            var stats = new List<Expression>();
 
             stats.Add(Expression.Assign(variable, Expression.New(LuaArguments_New_void)));
 
@@ -502,7 +487,7 @@ namespace NetLua
 
         static Expression CompileBlock(Ast.Block block, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
         {
-            List<Expression> exprs = new List<Expression>();
+            var exprs = new List<Expression>();
             var scope = Expression.Parameter(LuaContext_Type);
             exprs.Add(Expression.Assign(scope, Context));
 
@@ -533,9 +518,7 @@ namespace NetLua
             if (ifstat.ElseIfs.Count == 0)
             {
                 if (ifstat.ElseBlock == null)
-                {
                     return Expression.IfThen(condition, block);
-                }
                 else
                 {
                     var elseBlock = CompileBlock(ifstat.ElseBlock, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
@@ -553,9 +536,7 @@ namespace NetLua
                     if (b == null)
                     {
                         if (ifstat.ElseBlock == null)
-                        {
                             b = Expression.IfThen(cond, body);
-                        }
                         else
                         {
                             var elseBlock = CompileBlock(ifstat.ElseBlock, returnTarget, breakTarget, Expression.New(LuaContext_New_parent, Context));
@@ -563,9 +544,7 @@ namespace NetLua
                         }
                     }
                     else
-                    {
                         b = Expression.IfThenElse(cond, body, b);
-                    }
                 }
 
                 var tree = Expression.IfThenElse(condition, block, b);
@@ -577,7 +556,7 @@ namespace NetLua
         static Expression CompileReturnStat(Ast.ReturnStat ret, LabelTarget returnTarget, Expression Context)
         {
             var variable = Expression.Parameter(LuaArguments_Type);
-            List<Expression> body = new List<Expression>();
+            var body = new List<Expression>();
             var ctor = Expression.New(LuaArguments_New_void);
             body.Add(Expression.Assign(variable, ctor));
 
@@ -649,7 +628,7 @@ namespace NetLua
 
         static Expression CompileGenericFor(Ast.GenericFor stat, LabelTarget returnTarget, Expression Context)
         {
-            List<Expression> body = new List<Expression>();
+            var body = new List<Expression>();
             var args = Expression.Parameter(LuaArguments_Type);
             var f = GetArgument(args, 0);
             var s = GetArgument(args, 1);
@@ -700,55 +679,28 @@ namespace NetLua
         static Expression CompileStatement(IStatement stat, LabelTarget returnTarget, LabelTarget breakTarget, Expression Context)
         {
             if (stat is Ast.Assignment)
-            {
-                var assign = stat as Ast.Assignment;
-                return CompileAssignment(assign, Context);
-            }
+                return CompileAssignment(stat as Ast.Assignment, Context);
             else if (stat is Ast.LocalAssignment)
-            {
-                var assign = stat as Ast.LocalAssignment;
-                return CompileLocalAssignment(assign, Context);
-            }
+                return CompileLocalAssignment(stat as Ast.LocalAssignment, Context);
             else if (stat is Ast.FunctionCall)
-            {
-                var call = stat as Ast.FunctionCall;
-                return CompileFunctionCallStat(call, Context);
-            }
+                return CompileFunctionCallStat(stat as Ast.FunctionCall, Context);
             else if (stat is Ast.Block)
-            {
-                var block = stat as Ast.Block;
-                return CompileBlock(block, returnTarget, breakTarget, Context);
-            }
+                return CompileBlock(stat as Ast.Block, returnTarget, breakTarget, Context);
             else if (stat is Ast.IfStat)
-            {
-                var ifstat = stat as Ast.IfStat;
-                return CompileIfStat(ifstat, returnTarget, breakTarget, Context);
-            }
+                return CompileIfStat(stat as Ast.IfStat, returnTarget, breakTarget, Context);
             else if (stat is Ast.ReturnStat)
-            {
-                var ret = stat as Ast.ReturnStat;
-                return CompileReturnStat(ret, returnTarget, Context);
-            }
+                return CompileReturnStat(stat as Ast.ReturnStat, returnTarget, Context);
             else if (stat is Ast.BreakStat)
-            {
                 return Expression.Break(breakTarget);
-            }
             else if (stat is Ast.WhileStat)
-            {
                 return CompileWhileStat(stat as Ast.WhileStat, returnTarget, Context);
-            }
             else if (stat is Ast.RepeatStat)
-            {
                 return CompileRepeatStatement(stat as Ast.RepeatStat, returnTarget, Context);
-            }
             else if (stat is Ast.GenericFor)
-            {
                 return CompileGenericFor(stat as Ast.GenericFor, returnTarget, Context);
-            }
             else if (stat is Ast.NumericFor)
-            {
                 return CompileNumericFor(stat as Ast.NumericFor, returnTarget, Context);
-            }
+
             throw new NotImplementedException();
         }
         #endregion

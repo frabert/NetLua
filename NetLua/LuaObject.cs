@@ -63,23 +63,31 @@ namespace NetLua
 
     public class LuaArguments : IEnumerable<LuaObject>
     {
-        List<LuaObject> list = new List<LuaObject>();
+        List<LuaObject> list;
 
         public LuaArguments()
         {
-
+            list = new List<LuaObject>();
         }
 
         public LuaArguments(params LuaObject[] Objects)
         {
-            list.AddRange(Objects);
+            //list.AddRange(Objects);
+            list = new List<LuaObject>(Objects);
         }
 
         public LuaArguments(params LuaArguments[] Objects)
         {
             foreach (LuaArguments arg in Objects)
             {
-                list.AddRange(arg.list);
+                if (list == null)
+                {
+                    list = new List<LuaObject>(arg.list);
+                }
+                else
+                {
+                    list.AddRange(arg.list);
+                }
             }
         }
 
@@ -155,9 +163,9 @@ namespace NetLua
     /// <summary>
     /// A Lua type
     /// </summary>
-    public enum LuaType
+    public enum LuaType : byte
     {
-        nil,
+        nil = 0,
         boolean,
         number,
         @string,
@@ -170,7 +178,7 @@ namespace NetLua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject : DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
+    public class LuaObject :  DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
     {
         internal object luaobj;
         internal LuaType type;
@@ -179,6 +187,13 @@ namespace NetLua
         public LuaObject()
         {
             this.metatable = Nil;
+        }
+
+        private LuaObject(object Obj, LuaType Type)
+        {
+            this.metatable = Nil;
+            this.luaobj = Obj;
+            this.type = Type;
         }
 
         ~LuaObject()
@@ -259,25 +274,19 @@ namespace NetLua
             {
                 var str = obj as string;
                 if (str != null)
-                {
                     return FromString(str);
-                }
             }
 
             {
                 var @delegate = obj as LuaFunction;
                 if (@delegate != null)
-                {
                     return FromFunction(@delegate);
-                }
             }
 
             {
                 var dictionary = obj as LuaTable;
                 if (dictionary != null)
-                {
                     return FromTable(dictionary);
-                }
             }
 
             if (obj is double) return FromNumber((double)obj);
@@ -346,7 +355,7 @@ namespace NetLua
             if (number == 0d)
                 return Zero;
 
-            return new LuaObject { luaobj = number, type = LuaType.number, Metatable = Nil };
+            return new LuaObject(number, LuaType.number);
         }
 
         public static implicit operator LuaObject(double number)
@@ -385,7 +394,7 @@ namespace NetLua
             if (str.Length == 0)
                 return EmptyString;
 
-            return new LuaObject { luaobj = str, type = LuaType.@string, Metatable = Nil };
+            return new LuaObject(str, LuaType.@string);
         }
 
         public static implicit operator LuaObject(string str)
@@ -415,7 +424,7 @@ namespace NetLua
             if (fn == null)
                 return Nil;
 
-            return new LuaObject { luaobj = fn, type = LuaType.function, Metatable = Nil };
+            return new LuaObject(fn, LuaType.function);
         }
 
         public static implicit operator LuaObject(LuaFunction fn)
@@ -444,7 +453,7 @@ namespace NetLua
             if (table == null)
                 return Nil;
 
-            return new LuaObject { luaobj = table, type = LuaType.table, Metatable = Nil };
+            return new LuaObject(table, LuaType.table);
         }
 
         /// <summary>
@@ -478,7 +487,8 @@ namespace NetLua
             if (userdata == null)
                 return Nil;
 
-            return new LuaObject { luaobj = userdata, type = LuaType.userdata };
+            //return new LuaObject { luaobj = userdata, type = LuaType.userdata };
+            return new LuaObject(userdata, LuaType.userdata);
         }
 
         /// <summary>
@@ -645,14 +655,10 @@ namespace NetLua
                     if (table.ContainsKey(key))
                         return table[key];
                     else
-                    {
                         return LuaEvents.index_event(this, key);
-                    }
                 }
                 else
-                {
                     return LuaEvents.index_event(this, key);
-                }
             }
             set
             {
@@ -665,9 +671,7 @@ namespace NetLua
                         LuaEvents.newindex_event(this, key, value);
                 }
                 else
-                {
                     LuaEvents.newindex_event(this, key, value);
-                }
             }
         }
 
@@ -701,7 +705,7 @@ namespace NetLua
         {
             unchecked
             {
-                return (luaobj != null ? luaobj.GetHashCode() : 0) ^ type.GetHashCode();
+                return (luaobj != null ? luaobj.GetHashCode() : 0) ^ (byte)type;
             }
         }
 
@@ -749,23 +753,17 @@ namespace NetLua
         internal static object getObject(LuaObject a)
         {
             if (a.Type != LuaType.table && a.Type != LuaType.function)
-            {
                 return a.luaobj;
-            }
             else
-            {
                 return a;
-            }
         }
-
+        
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             result = null;
             LuaObject obj = this[binder.Name];
             if (obj.IsNil)
-            {
                 return false;
-            }
             else
             {
                 result = getObject(obj);
@@ -776,13 +774,9 @@ namespace NetLua
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
             if (value is LuaObject)
-            {
                 this[binder.Name] = (LuaObject)value;
-            }
             else
-            {
                 this[binder.Name] = LuaObject.FromObject(value);
-            }
             return true;
         }
 
@@ -794,13 +788,9 @@ namespace NetLua
             if (ret.Length == 1)
             {
                 if (ret[0].IsNil)
-                {
                     result = null;
-                }
                 else
-                {
                     result = getObject(ret[0]);
-                }
                 return true;
             }
             else

@@ -64,7 +64,7 @@ namespace NetLua
 
         static LuaArguments math_max(LuaArguments args)
         {
-            double max = args[0];
+            var max = args[0];
             foreach (LuaObject o in args)
             {
                 max = Math.Max(max, o);
@@ -74,7 +74,7 @@ namespace NetLua
 
         static LuaArguments math_min(LuaArguments args)
         {
-            double min = args[0];
+            var min = args[0];
             foreach (LuaObject o in args)
             {
                 min = Math.Min(min, o);
