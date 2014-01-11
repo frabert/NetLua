@@ -112,9 +112,7 @@ namespace NetLua
                 return Lua.Return(CreateFileObject(stream));
             }
             else
-            {
                 return Lua.Return();
-            }
         }
 
         static LuaArguments io_type(LuaArguments args)
@@ -124,13 +122,9 @@ namespace NetLua
             {
                 FileObject fobj = obj.luaobj as FileObject;
                 if (!fobj.stream.CanWrite && !fobj.stream.CanRead)
-                {
                     return Lua.Return("closed file");
-                }
                 else
-                {
                     return Lua.Return("file");
-                }
             }
             return Lua.Return();
         }
@@ -149,13 +143,9 @@ namespace NetLua
                 return Lua.Return(currentInput);
             }
             else if (args.Length == 0)
-            {
                 return Lua.Return(currentInput);
-            }
             else
-            {
                 throw new LuaException("Invalid argument");
-            }
         }
 
         static LuaArguments io_output(LuaArguments args)
@@ -173,13 +163,9 @@ namespace NetLua
                 return Lua.Return(currentOutput);
             }
             else if (args.Length == 0)
-            {
                 return Lua.Return(currentOutput);
-            }
             else
-            {
                 throw new LuaException("Invalid argument");
-            }
         }
 
         static LuaArguments io_temp(LuaArguments args)
@@ -194,39 +180,27 @@ namespace NetLua
         {
             var obj = args[0];
             if (!obj.IsNil)
-            {
                 return currentOutput["write"].MethodCall(currentOutput, args);
-            }
             else
-            {
                 return Lua.Return();
-            }
         }
 
         static LuaArguments io_flush(LuaArguments args)
         {
             var obj = args[0];
             if (obj.IsNil)
-            {
                 return currentOutput["flush"].MethodCall(currentOutput, args);
-            }
             else
-            {
                 return obj["flush"].MethodCall(obj, args);
-            }
         }
 
         static LuaArguments io_close(LuaArguments args)
         {
             var obj = args[0];
             if (obj.IsNil)
-            {
                 return currentOutput["close"].MethodCall(currentOutput, args);
-            }
             else
-            {
                 return obj["close"].MethodCall(obj, args);
-            }
         }
 
         static LuaArguments io_read(LuaArguments args)
@@ -244,26 +218,19 @@ namespace NetLua
                 {
                     if (arg == self)
                         continue;
+
                     if (!(arg.IsString || arg.IsNumber))
-                    {
                         Lua.Return();
-                    }
 
                     if (fobj.stream.CanWrite)
-                    {
                         fobj.writer.Write(arg.ToString());
-                    }
                     else
-                    {
                         Lua.Return();
-                    }
                 }
                 return Lua.Return(self);
             }
             else
-            {
                 return Lua.Return();
-            }
         }
 
         static LuaArguments close(LuaArguments args)
@@ -340,13 +307,9 @@ namespace NetLua
                             ret.Add(bld.ToString());
                         }
                         else if (arg == "*a")
-                        {
                             ret.Add(fobj.reader.ReadToEnd());
-                        }
                         else if (arg == "*l")
-                        {
                             ret.Add(fobj.reader.ReadLine());
-                        }
                         else if (arg == "*n")
                         {
                             //TODO: Implement io.read("*n")
@@ -357,9 +320,7 @@ namespace NetLua
                 }
             }
             else
-            {
                 return Lua.Return();
-            }
         }
     }
 }

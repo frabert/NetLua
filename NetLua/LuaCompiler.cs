@@ -321,7 +321,7 @@ namespace NetLua
             }
             var arg = Expression.NewArrayInit(LuaObject_Type, args.ToArray());
             var luaarg = Expression.New(LuaArguments_New, arg);
-            //return Expression.Call(function, LuaObject_Call, passarg);
+
             if (lastArg == null)
                 return Expression.Call(function, LuaObject_Call, luaarg);
             else
@@ -377,9 +377,9 @@ namespace NetLua
 
             var funcBody = Expression.Block(new[] { i, names, scopeVar }, exprs.ToArray());
 
-            var function = Expression.Lambda<LuaFunction>(funcBody, args); //.Compile();
+            var function = Expression.Lambda<LuaFunction>(funcBody, args);
             var returnValue = Expression.Lambda<Func<LuaObject>>(Expression.Convert(function, LuaObject_Type), null);
-            //var luaobject = (LuaObject)function;
+
             return returnValue;
         }
         #endregion

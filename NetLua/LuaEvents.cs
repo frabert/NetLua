@@ -97,6 +97,27 @@ namespace NetLua
                 return LuaObject.Nil;
         }
 
+        internal static bool ConvertToNumber(LuaObject obj, out double value)
+        {
+            if (obj.IsNumber)
+            {
+                value = (double)obj.luaobj;
+                return true;
+            }
+            else if (obj.IsString)
+            {
+                if (double.TryParse(obj.AsString(), out value))
+                    return true;
+                else
+                    return false;
+            }
+            else
+            {
+                value = 0d;
+                return false;
+            }
+        }
+
         internal static LuaObject getMetamethod(LuaObject obj, string e)
         {
             if (obj.Metatable == null || obj.Metatable.IsNil)
@@ -107,11 +128,10 @@ namespace NetLua
 
         internal static LuaObject add_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(a.AsNumber() + b.AsNumber());
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(a + b);
             else
             {
                 var handler = getBinhandler(op1, op2, "__add");
@@ -124,11 +144,10 @@ namespace NetLua
 
         internal static LuaObject sub_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(a.AsNumber() - b.AsNumber());
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(a - b);
             else
             {
                 var handler = getBinhandler(op1, op2, "__sub");
@@ -141,11 +160,10 @@ namespace NetLua
 
         internal static LuaObject mul_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(a.AsNumber() * b.AsNumber());
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(a * b);
             else
             {
                 var handler = getBinhandler(op1, op2, "__mul");
@@ -158,11 +176,10 @@ namespace NetLua
 
         internal static LuaObject div_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(a.AsNumber() / b.AsNumber());
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(a / b);
             else
             {
                 var handler = getBinhandler(op1, op2, "__div");
@@ -175,11 +192,10 @@ namespace NetLua
 
         internal static LuaObject mod_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(a.AsNumber() - Math.Floor(a.AsNumber() / b.AsNumber()) * b.AsNumber());
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(a - Math.Floor(a / b) * b);
             else
             {
                 var handler = getBinhandler(op1, op2, "__mod");
@@ -192,11 +208,10 @@ namespace NetLua
 
         internal static LuaObject pow_event(LuaObject op1, LuaObject op2)
         {
-            var a = toNumber(op1);
-            var b = toNumber(op2);
+            double a, b;
 
-            if (!a.IsNil && !b.IsNil)
-                return LuaObject.FromNumber(Math.Pow(a.AsNumber(), b.AsNumber()));
+            if (ConvertToNumber(op1, out a) && ConvertToNumber(op2, out b))
+                return LuaObject.FromNumber(Math.Pow(a, b));
             else
             {
                 var handler = getBinhandler(op1, op2, "__pow");
@@ -209,12 +224,11 @@ namespace NetLua
 
         internal static LuaObject unm_event(LuaObject op)
         {
-            var a = toNumber(op);
+            double a;
 
-            if (!a.IsNil)
+            if (ConvertToNumber(op, out a))
             {
-                double o1 = a.AsNumber();
-                return LuaObject.FromNumber(-o1);
+                return LuaObject.FromNumber(-a);
             }
             else
             {
@@ -326,7 +340,7 @@ namespace NetLua
         internal static LuaObject concat_event(LuaObject op1, LuaObject op2)
         {
             if ((op1.IsString || op1.IsNumber) && (op2.IsString || op2.IsNumber))
-                return op1.ToString() + op2.ToString();
+                return string.Concat(op1, op2);
             else
             {
                 var handler = getBinhandler(op1, op2, "__concat");
