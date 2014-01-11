@@ -32,7 +32,6 @@ using NetLua.Ast;
 
 namespace NetLua
 {
-    #if COMPILED
     public static class LuaCompiler
     {
         static Type LuaContext_Type = typeof(LuaContext);
@@ -705,5 +704,4 @@ namespace NetLua
         }
         #endregion
     }
-    #endif
 }
