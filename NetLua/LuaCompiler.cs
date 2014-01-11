@@ -139,8 +139,9 @@ namespace NetLua
                     return Expression.ExclusiveOr(left, right);
                 case BinaryOp.Subtraction:
                     return Expression.Subtract(left, right);
+                default:
+                    throw new NotImplementedException();
             }
-            throw new NotImplementedException();
         }
 
         static Expression CompileUnaryExpression(Ast.UnaryExpression expr, Expression Context)
@@ -154,8 +155,9 @@ namespace NetLua
                     return Expression.Not(e);
                 case UnaryOp.Length:
                     return Expression.Call(LuaEvents_len, e);
+                default:
+                    throw new NotImplementedException();
             }
-            throw new NotImplementedException();
         }
 
         static Expression GetVariable(Ast.Variable expr, Expression Context)
@@ -549,7 +551,6 @@ namespace NetLua
                 var tree = Expression.IfThenElse(condition, block, b);
                 return tree;
             }
-            throw new NotImplementedException();
         }
 
         static Expression CompileReturnStat(Ast.ReturnStat ret, LabelTarget returnTarget, Expression Context)
@@ -699,8 +700,8 @@ namespace NetLua
                 return CompileGenericFor(stat as Ast.GenericFor, returnTarget, Context);
             else if (stat is Ast.NumericFor)
                 return CompileNumericFor(stat as Ast.NumericFor, returnTarget, Context);
-
-            throw new NotImplementedException();
+            else
+                throw new NotImplementedException();
         }
         #endregion
     }
