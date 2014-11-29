@@ -377,7 +377,7 @@ namespace NetLua
                 if (!handler.IsNil)
                     return !(!(handler.Call(op1, op2)[0].AsBool()));
                 else
-                    return LuaObject.Nil;
+                    throw new ArgumentException("attempt to compare " + op1.type.ToString() + " with " + op2.type.ToString());
             }
         }
 
@@ -396,7 +396,7 @@ namespace NetLua
                 if (!handler.IsNil)
                     return !(!(handler.Call(op1, op2)[0].AsBool()));
                 else
-                    return LuaObject.Nil;
+                    throw new ArgumentException("attempt to compare " + op1.type.ToString() + " with " + op2.type.ToString());
             }
         }
 
