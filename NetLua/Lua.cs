@@ -21,10 +21,6 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#if COMPILED && INTERPRETED
-#error Please specify only COMPILED or INTERPRETED
-#endif
-
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -86,18 +82,11 @@ namespace NetLua
         /// <param name="Filename">The file to execute</param>
         public LuaArguments DoFile(string Filename)
         {
-            #if INTERPRETED
-            LuaInterpreter.LuaReturnStatus ret;
-            return LuaInterpreter.EvalBlock(p.ParseFile(Filename), ctx, out ret);
-            #endif
-
-            #if COMPILED
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseFile(Filename);
             var function = LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Compile();
             return function().Call(Lua.Return());
-            #endif
         }
 
         /// <summary>
@@ -105,18 +94,11 @@ namespace NetLua
         /// </summary>
         public LuaArguments DoString(string Chunk)
         {
-            #if INTERPRETED
-            LuaInterpreter.LuaReturnStatus ret;
-            return LuaInterpreter.EvalBlock(p.ParseString(Chunk), ctx, out ret);
-            #endif
-
-            #if COMPILED
             FunctionDefinition def = new FunctionDefinition();
             def.Arguments = new List<Argument>();
             def.Body = p.ParseString(Chunk);
             var function = LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Compile();
             return function().Call(Lua.Return());
-            #endif
         }
 
         /// <summary>

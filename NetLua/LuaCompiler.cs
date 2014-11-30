@@ -32,7 +32,6 @@ using NetLua.Ast;
 
 namespace NetLua
 {
-    #if COMPILED
     public static class LuaCompiler
     {
         static Type LuaContext_Type = typeof(LuaContext);
@@ -140,8 +139,9 @@ namespace NetLua
                     return Expression.ExclusiveOr(left, right);
                 case BinaryOp.Subtraction:
                     return Expression.Subtract(left, right);
+                default:
+                    throw new NotImplementedException();
             }
-            throw new NotImplementedException();
         }
 
         static Expression CompileUnaryExpression(Ast.UnaryExpression expr, Expression Context)
@@ -155,8 +155,9 @@ namespace NetLua
                     return Expression.Not(e);
                 case UnaryOp.Length:
                     return Expression.Call(LuaEvents_len, e);
+                default:
+                    throw new NotImplementedException();
             }
-            throw new NotImplementedException();
         }
 
         static Expression GetVariable(Ast.Variable expr, Expression Context)
@@ -321,7 +322,7 @@ namespace NetLua
             }
             var arg = Expression.NewArrayInit(LuaObject_Type, args.ToArray());
             var luaarg = Expression.New(LuaArguments_New, arg);
-            //return Expression.Call(function, LuaObject_Call, passarg);
+
             if (lastArg == null)
                 return Expression.Call(function, LuaObject_Call, luaarg);
             else
@@ -377,9 +378,9 @@ namespace NetLua
 
             var funcBody = Expression.Block(new[] { i, names, scopeVar }, exprs.ToArray());
 
-            var function = Expression.Lambda<LuaFunction>(funcBody, args); //.Compile();
+            var function = Expression.Lambda<LuaFunction>(funcBody, args);
             var returnValue = Expression.Lambda<Func<LuaObject>>(Expression.Convert(function, LuaObject_Type), null);
-            //var luaobject = (LuaObject)function;
+
             return returnValue;
         }
         #endregion
@@ -550,7 +551,6 @@ namespace NetLua
                 var tree = Expression.IfThenElse(condition, block, b);
                 return tree;
             }
-            throw new NotImplementedException();
         }
 
         static Expression CompileReturnStat(Ast.ReturnStat ret, LabelTarget returnTarget, Expression Context)
@@ -700,10 +700,9 @@ namespace NetLua
                 return CompileGenericFor(stat as Ast.GenericFor, returnTarget, Context);
             else if (stat is Ast.NumericFor)
                 return CompileNumericFor(stat as Ast.NumericFor, returnTarget, Context);
-
-            throw new NotImplementedException();
+            else
+                throw new NotImplementedException();
         }
         #endregion
     }
-    #endif
 }

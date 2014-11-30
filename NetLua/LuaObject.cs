@@ -70,9 +70,13 @@ namespace NetLua
             list = new List<LuaObject>();
         }
 
+        public LuaArguments(List<LuaObject> List)
+        {
+            list = List;
+        }
+
         public LuaArguments(params LuaObject[] Objects)
         {
-            //list.AddRange(Objects);
             list = new List<LuaObject>(Objects);
         }
 
@@ -81,13 +85,9 @@ namespace NetLua
             foreach (LuaArguments arg in Objects)
             {
                 if (list == null)
-                {
                     list = new List<LuaObject>(arg.list);
-                }
                 else
-                {
                     list.AddRange(arg.list);
-                }
             }
         }
 
@@ -154,7 +154,7 @@ namespace NetLua
             }
             else
             {
-                return new LuaArguments(list.GetRange(startIndex, list.Count - startIndex).ToArray());
+                return new LuaArguments(list.GetRange(startIndex, list.Count - startIndex));
             }
         }
     }
@@ -178,7 +178,7 @@ namespace NetLua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject :  DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>> //, IEquatable<LuaObject>
+    public class LuaObject :  DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>>
     {
         internal object luaobj;
         internal LuaType type;
@@ -265,6 +265,7 @@ namespace NetLua
         {
             if (obj == null)
                 return Nil;
+
             if (obj is LuaObject)
                 return (LuaObject)obj;
 
@@ -611,17 +612,13 @@ namespace NetLua
                     return LuaObject.FromObject(b);
             }
             else
-            {
                 return a;
-            }
         }
 
         public static LuaObject operator &(LuaObject a, object b)
         {
             if (a.IsNil || !a.AsBool())
-            {
                 return a;
-            }
             else
             {
                 if (b is LuaObject)
@@ -651,9 +648,10 @@ namespace NetLua
             {
                 if (IsTable)
                 {
-                    LuaTable table = AsTable();
-                    if (table.ContainsKey(key))
-                        return table[key];
+                    var table = AsTable();
+                    LuaObject obj;
+                    if (table.TryGetValue(key, out obj))
+                        return obj;
                     else
                         return LuaEvents.index_event(this, key);
                 }
@@ -665,7 +663,8 @@ namespace NetLua
                 if (IsTable)
                 {
                     var table = AsTable();
-                    if (table.ContainsKey(key))
+                    LuaObject obj;
+                    if (table.TryGetValue(key, out obj))
                         table[key] = value;
                     else
                         LuaEvents.newindex_event(this, key, value);
@@ -716,7 +715,7 @@ namespace NetLua
         /// <param name="args">Arguments to be passed after the object</param>
         public LuaArguments MethodCall(LuaObject instance, LuaArguments args)
         {
-            LuaObject[] objs = new LuaObject[args.Length + 1];
+            var objs = new LuaObject[args.Length + 1];
             objs[0] = instance;
             for (int i = 0; i < args.Length; i++)
             {

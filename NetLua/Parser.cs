@@ -408,9 +408,7 @@ namespace NetLua
         Ast.Block ParseDoBlock(ParseTreeNode node)
         {
             if (node.Term.Name == "DoBlock")
-            {
                 return ParseBlock(node.ChildNodes[1]);
-            }
             throw new Exception("Invalid DoBlock node");
         }
 
@@ -471,9 +469,7 @@ namespace NetLua
                 }
 
                 if (ElseNode.ChildNodes.Count != 0)
-                {
                     If.ElseBlock = ParseBlock(ElseNode.ChildNodes[0].ChildNodes[1]);
-                }
 
                 return If;
             }
