@@ -593,8 +593,9 @@ namespace NetLua
             {
                 if (node.ChildNodes.Count == 1)
                 {
-                    string name = node.ChildNodes[0].Token.ValueString;
-                    return new Ast.Variable() { Name = name };
+                    var token = node.ChildNodes[0].Token;
+                    string name = token.ValueString;
+                    return new Ast.Variable() { Name = name, lineNumber = token.Location.Line, columnNumber =  token.Location.Column };
                 }
                 else
                 {
@@ -606,8 +607,9 @@ namespace NetLua
                     }
                     else
                     {
-                        string name = node.ChildNodes[1].Token.ValueString;
-                        return new Ast.Variable() { Name = name, Prefix = prefix };
+                        var token = node.ChildNodes[1].Token;
+                        string name = token.ValueString;
+                        return new Ast.Variable() { Name = name, Prefix = prefix, lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                     }
                 }
             }
@@ -647,7 +649,10 @@ namespace NetLua
 
                             Ast.IExpression key;
                             if (prefix.ChildNodes[0].Term.Name == "identifier")
-                                key = new Ast.StringLiteral() { Value = prefix.ChildNodes[0].Token.ValueString };
+                            {
+                                var token = prefix.ChildNodes[0].Token;
+                                key = new Ast.StringLiteral() { Value = token.ValueString, lineNumber = token.Location.Line, columnNumber = token.Location.Column };
+                            }
                             else
                                 key = ParseExpression(prefix.ChildNodes[0]);
 
@@ -674,23 +679,25 @@ namespace NetLua
             if (node.Term.Name == "Expression")
             {
                 ParseTreeNode child = node.ChildNodes[0];
-                if (child.Token != null && child.Token.Terminal is NumberLiteral)
+                var token = child.Token;
+                if (token != null && token.Terminal is NumberLiteral)
                 {
-                    return new Ast.NumberLiteral() { Value = (child.Token.Value is double ? (double)(child.Token.Value) : (int)(child.Token.Value)) };
+                    return new Ast.NumberLiteral() { Value = (token.Value is double ? (double)(token.Value) : (int)(token.Value)),
+                        lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                 }
-                else if (child.Token != null && child.Token.Terminal is StringLiteral)
+                else if (token != null && token.Terminal is StringLiteral)
                 {
-                    return new Ast.StringLiteral() { Value = (string)(child.Token.Value) };
+                    return new Ast.StringLiteral() { Value = (string)(token.Value), lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                 }
-                else if (child.Token != null && child.Token.Terminal is KeyTerm)
+                else if (token != null && token.Terminal is KeyTerm)
                 {
-                    string val = child.Token.ValueString;
+                    string val = token.ValueString;
                     if (val == "true")
-                        return new Ast.BoolLiteral() { Value = true };
+                        return new Ast.BoolLiteral() { Value = true, lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                     else if (val == "false")
-                        return new Ast.BoolLiteral() { Value = false };
+                        return new Ast.BoolLiteral() { Value = false, lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                     else if (val == "nil")
-                        return new Ast.NilLiteral();
+                        return new Ast.NilLiteral() { lineNumber = token.Location.Line, columnNumber = token.Location.Column };
                 }
                 else if (child.Term != null && child.Term.Name == "Prefix")
                 {
@@ -718,7 +725,7 @@ namespace NetLua
                 }
                 else if (child.Term != null && child.Term.Name == "Varargs")
                 {
-                    return new Ast.VarargsLiteral();
+                    return new Ast.VarargsLiteral() { lineNumber = child.Span.Location.Line, columnNumber = child.Span.Location.Column };
                 }
             }
             throw new Exception("Invalid Expression node");
