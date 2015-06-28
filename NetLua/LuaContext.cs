@@ -61,9 +61,16 @@ namespace NetLua
         {
             var obj = LuaObject.Nil;
             if (variables.TryGetValue(Name, out obj) || parent == null)
-                return obj;
+            {
+                if (obj == null)
+                    return LuaObject.Nil;
+                else
+                    return obj;
+            }
             else
+            {
                 return parent.Get(Name);
+            }
         }
 
         /// <summary>
