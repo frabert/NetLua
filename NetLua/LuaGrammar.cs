@@ -12,213 +12,215 @@ using Irony.Ast;
 
 namespace NetLua
 {
-    class LuaGrammar : Grammar
+  class LuaGrammar : Grammar
+  {
+    public LuaGrammar()
+      : base(true)
     {
-        public LuaGrammar()
-            : base(true)
-        {
-            #region Terminals
-            Terminal Identifier = new IdentifierTerminal("identifier");
-            Terminal SingleString = new StringLiteral("string", "'", StringOptions.AllowsAllEscapes);
-            Terminal DoubleString = new StringLiteral("string", "\"", StringOptions.AllowsAllEscapes);
-            Terminal Number = new NumberLiteral("number", NumberOptions.AllowSign);
+      #region Terminals
+      var Identifier = new IdentifierTerminal("identifier");
+      var SingleString = new StringLiteral("string", "'", StringOptions.AllowsAllEscapes);
+      var DoubleString = new StringLiteral("string", "\"", StringOptions.AllowsAllEscapes);
+      var Number = new NumberLiteral("number", NumberOptions.AllowSign);
 
-            Terminal LineComment = new CommentTerminal("Comment", "--", "\n", "\r");
-            Terminal LongComment = new CommentTerminal("LongComment", "--[[", "]]");
+      var LineComment = new CommentTerminal("Comment", "--", "\n", "\r");
+      var LongComment = new CommentTerminal("LongComment", "--[[", "]]");
 
-            base.NonGrammarTerminals.Add(LineComment);
-            base.NonGrammarTerminals.Add(LongComment);
-            #endregion
+      base.NonGrammarTerminals.Add(LineComment);
+      base.NonGrammarTerminals.Add(LongComment);
+      #endregion
 
-            #region Nonterminals
-            NonTerminal Chunk = new NonTerminal("Chunk");
-
-            NonTerminal Prefix = new NonTerminal("Prefix");
-            NonTerminal Variable = new NonTerminal("Variable");
-            NonTerminal FunctionCall = new NonTerminal("FunctionCall");
-            NonTerminal CallArguments = new NonTerminal("FunctionCallArguments");
-            NonTerminal OopCall = new NonTerminal("OopCall");
-            NonTerminal CallArgumentsFragment = new NonTerminal("");
-            NonTerminal Expression = new NonTerminal("Expression");
-            NonTerminal FunctionDef = new NonTerminal("FunctionDef");
-            NonTerminal DefArguments = new NonTerminal("FunctionDefArguments");
-            NonTerminal DefArgumentsFragment = new NonTerminal("");
-
-            NonTerminal Statement = new NonTerminal("Statement");
-            NonTerminal ReturnStatement = new NonTerminal("ReturnStat");
-            NonTerminal BreakStatement = new NonTerminal("BreakStat");
-            NonTerminal Assignment = new NonTerminal("Assignment");
-            NonTerminal LocalAssignment = new NonTerminal("LocalAssignment");
-            NonTerminal FunctionDecl = new NonTerminal("FunctionDecl");
-            NonTerminal DoBlock = new NonTerminal("DoBlock");
-            NonTerminal If = new NonTerminal("If");
-            NonTerminal Elseif = new NonTerminal("Elseif");
-            NonTerminal Else = new NonTerminal("Else");
-            NonTerminal While = new NonTerminal("While");
-            NonTerminal Repeat = new NonTerminal("Repeat");
-            NonTerminal For = new NonTerminal("For");
-
-            NonTerminal PowerOp = new NonTerminal("PowerOp");
-            NonTerminal MulOp = new NonTerminal("MulOp");
-            NonTerminal AddOp = new NonTerminal("AddOp");
-            NonTerminal ConcatOp = new NonTerminal("ConcatOp");
-            NonTerminal RelOp = new NonTerminal("RelOp");
-            NonTerminal AndOp = new NonTerminal("AndOp");
-            NonTerminal OrOp = new NonTerminal("OrOp");
-            NonTerminal UnaryExpr = new NonTerminal("UnaryExpr");
-
-            NonTerminal TableConstruct = new NonTerminal("TableConstruct");
-            NonTerminal TableConstructFragment = new NonTerminal("TableConstructFragment");
-            #endregion
-
-            #region Fragments
-            CallArgumentsFragment.Rule = Expression | Expression + "," + CallArgumentsFragment;
-
-            CallArguments.Rule = "(" + (CallArgumentsFragment | Empty) + ")";
-
-            DefArgumentsFragment.Rule = Identifier | Identifier + "," + DefArgumentsFragment;
-
-            DefArguments.Rule = "(" + (DefArgumentsFragment | Empty) + ")";
-
-            Chunk.Rule = MakeStarRule(Chunk, Statement);
-            #endregion
-
-            #region Expressions
-            PowerOp.Rule = Expression + ("^" + Expression | Empty);
-            MulOp.Rule = PowerOp + ((ToTerm("*") | "/" | "%") + PowerOp | Empty);
-            AddOp.Rule = MulOp + ((ToTerm("+") | "-") + MulOp | Empty);
-            ConcatOp.Rule = AddOp + (".." + AddOp | Empty);
-            RelOp.Rule = ConcatOp + ((ToTerm(">") | ">=" | "<" | "<=" | "==" | "~=") + ConcatOp | Empty);
-            AndOp.Rule = RelOp + ("and" + RelOp | Empty);
-            OrOp.Rule = AndOp + ("or" + AndOp | Empty);
-
-            UnaryExpr.Rule = (ToTerm("not") | "-" | "#") + Expression;
-
-            Prefix.Rule =
-                OopCall
-                | FunctionCall
-                | Variable
-                | "(" + Expression + ")";
-
-            Variable.Rule =
-                Prefix + "." + Identifier
-                | Prefix + "[" + Expression + "]"
-                | Identifier;
-
-            FunctionCall.Rule = Prefix + CallArguments;
-            OopCall.Rule = Prefix + ":" + Identifier + CallArguments;
-
-            FunctionDef.Rule =
-                ToTerm("function") + DefArguments
-                + Chunk + ToTerm("end");
-
-            var tableSep = new NonTerminal("");
-            tableSep.Rule = ToTerm(";") | ",";
-            TableConstructFragment.Rule =
-                (
-                    (
-                        (
-                            (Identifier | "[" + Expression + "]") + "="
-                        )
-                        + Expression
-                        | Expression
-                    )
-                    + (";" + TableConstructFragment | "," + TableConstructFragment | Empty)
-                ) | Empty;
-            TableConstruct.Rule = "{" + TableConstructFragment + "}";
-
-            var varargs = new NonTerminal("Varargs");
-            varargs.Rule = "...";
-
-            Expression.Rule =
-                 varargs
-                | Prefix
-                | OrOp
-                | UnaryExpr
-                | ToTerm("true")
-                | "false"
-                | "nil"
-                | SingleString
-                | DoubleString
-                | Number
-                | FunctionDef
-                | TableConstruct;
-            #endregion
-
-            #region Statements
-            FunctionDecl.Rule = "function" + Variable + (":" + Identifier | Empty) + DefArguments + Chunk + "end";
+      #region Nonterminals
+      var Chunk = new NonTerminal("Chunk");
+      
+      var Prefix = new NonTerminal("Prefix");
+      var Variable = new NonTerminal("Variable");
+      var FunctionCall = new NonTerminal("FunctionCall");
+      var CallArguments = new NonTerminal("FunctionCallArguments");
+      var OopCall = new NonTerminal("OopCall");
+      var CallArgumentsFragment = new NonTerminal("");
+      var Expression = new NonTerminal("Expression");
+      var FunctionDef = new NonTerminal("FunctionDef");
+      var DefArguments = new NonTerminal("FunctionDefArguments");
+      var DefArgumentsFragment = new NonTerminal("");
+      
+      var Statement = new NonTerminal("Statement");
+      var ReturnStatement = new NonTerminal("ReturnStat");
+      var BreakStatement = new NonTerminal("BreakStat");
+      var Assignment = new NonTerminal("Assignment");
+      var LocalAssignment = new NonTerminal("LocalAssignment");
+      var FunctionDecl = new NonTerminal("FunctionDecl");
+      var DoBlock = new NonTerminal("DoBlock");
+      var If = new NonTerminal("If");
+      var Elseif = new NonTerminal("Elseif");
+      var Else = new NonTerminal("Else");
+      var While = new NonTerminal("While");
+      var Repeat = new NonTerminal("Repeat");
+      var For = new NonTerminal("For");
+      
+      var PowerOp = new NonTerminal("PowerOp");
+      var MulOp = new NonTerminal("MulOp");
+      var AddOp = new NonTerminal("AddOp");
+      var ConcatOp = new NonTerminal("ConcatOp");
+      var RelOp = new NonTerminal("RelOp");
+      var AndOp = new NonTerminal("AndOp");
+      var OrOp = new NonTerminal("OrOp");
+      var UnaryExpr = new NonTerminal("UnaryExpr");
+      
+      var TableConstruct = new NonTerminal("TableConstruct");
+      var TableConstructFragment = new NonTerminal("TableConstructFragment");
 
 
-            var RetChunk = new NonTerminal("RetChunk");
-            RetChunk.Rule = Expression + (("," + RetChunk) | Empty);
+      var varargs = new NonTerminal("Varargs");
+      #endregion
 
-            ReturnStatement.Rule =
-                "return" + (RetChunk | Empty);
+      #region Fragments
+      CallArgumentsFragment.Rule = Expression | Expression + "," + CallArgumentsFragment;
 
-            var AssignExpChunk = new NonTerminal("AssignExpChunk");
-            AssignExpChunk.Rule = Expression + (("," + AssignExpChunk) | Empty);
-            var AssignVarChunk = new NonTerminal("AssignVarChunk");
-            AssignVarChunk.Rule = Variable + (("," + AssignVarChunk) | Empty);
+      CallArguments.Rule = "(" + (CallArgumentsFragment | Empty) + ")";
 
-            Assignment.Rule =
-                AssignVarChunk + "=" + AssignExpChunk;
+      DefArgumentsFragment.Rule = Identifier | Identifier + "," + DefArgumentsFragment | varargs;
 
-            var LocalAssignNameChunk = new NonTerminal("AssignNameChunk");
-            var LocalFunction = new NonTerminal("LocalFunction");
-            LocalAssignNameChunk.Rule = Identifier + (("," + LocalAssignNameChunk) | Empty);
-            LocalFunction.Rule = "function" + Identifier + DefArguments + Chunk + "end";
-            LocalAssignment.Rule = "local" + (LocalAssignNameChunk + ("=" + AssignExpChunk | Empty) | LocalFunction);
+      DefArguments.Rule = "(" + (DefArgumentsFragment | Empty) + ")";
 
-            Elseif.Rule = "elseif" + Expression + "then" + Chunk + (Elseif | Empty);
-            Else.Rule = "else" + Chunk;
+      Chunk.Rule = MakeStarRule(Chunk, Statement);
+      #endregion
 
-            If.Rule = "if" + Expression + "then" + Chunk + (Elseif | Empty) + (Else | Empty) + "end";
+      #region Expressions
+      PowerOp.Rule = Expression + ("^" + Expression | Empty);
+      MulOp.Rule = PowerOp + ((ToTerm("*") | "/" | "%") + PowerOp | Empty);
+      AddOp.Rule = MulOp + ((ToTerm("+") | "-") + MulOp | Empty);
+      ConcatOp.Rule = AddOp + (".." + AddOp | Empty);
+      RelOp.Rule = ConcatOp + ((ToTerm(">") | ">=" | "<" | "<=" | "==" | "~=") + ConcatOp | Empty);
+      AndOp.Rule = RelOp + ("and" + RelOp | Empty);
+      OrOp.Rule = AndOp + ("or" + AndOp | Empty);
 
-            While.Rule = "while" + Expression + DoBlock;
+      UnaryExpr.Rule = (ToTerm("not") | "-" | "#") + Expression;
 
-            DoBlock.Rule = "do" + Chunk + "end";
+      Prefix.Rule =
+          OopCall
+          | FunctionCall
+          | Variable
+          | "(" + Expression + ")";
 
-            Repeat.Rule = "repeat" + Chunk + "until" + Expression;
+      Variable.Rule =
+          Prefix + "." + Identifier
+          | Prefix + "[" + Expression + "]"
+          | Identifier;
 
-            BreakStatement.Rule = "break";
+      FunctionCall.Rule = Prefix + CallArguments;
+      OopCall.Rule = Prefix + ":" + Identifier + CallArguments;
 
-            var NumericFor = new NonTerminal("NumericFor");
-            NumericFor.Rule = Identifier + "=" + Expression + "," + Expression + ("," + Expression | Empty);
-            var GenericFor = new NonTerminal("GenericFor");
-            var NameList = new NonTerminal("NameList");
-            var ExpList = new NonTerminal("ExpList");
-            NameList.Rule = Identifier + (("," + NameList) | Empty);
-            ExpList.Rule = Expression + (("," + ExpList) | Empty);
-            GenericFor.Rule = NameList + "in" + ExpList;
+      FunctionDef.Rule =
+          ToTerm("function") + DefArguments
+          + Chunk + ToTerm("end");
 
-            For.Rule = "for" + (GenericFor | NumericFor) + DoBlock;
+      var tableSep = new NonTerminal("");
+      tableSep.Rule = ToTerm(";") | ",";
+      TableConstructFragment.Rule =
+          (
+              (
+                  (
+                      (Identifier | "[" + Expression + "]") + "="
+                  )
+                  + Expression
+                  | Expression
+              )
+              + (";" + TableConstructFragment | "," + TableConstructFragment | Empty)
+          ) | Empty;
+      TableConstruct.Rule = "{" + TableConstructFragment + "}";
 
-            Statement.Rule =
-                ";"
-                | ReturnStatement
-                | BreakStatement
-                | Assignment
-                | LocalAssignment
-                | FunctionCall
-                | OopCall
-                | FunctionDecl
-                | For
-                | If
-                | While
-                | DoBlock
-                | Repeat;
-            #endregion
+      varargs.Rule = "...";
 
-            this.Root = Chunk;
-            this.MarkReservedWords(
-                "true", "false",
-                "nil", "local",
-                "function", "while",
-                "if", "for", "repeat", "until",
-                "end", "do", "return", "break");
+      Expression.Rule =
+           varargs
+          | Prefix
+          | OrOp
+          | UnaryExpr
+          | ToTerm("true")
+          | "false"
+          | "nil"
+          | SingleString
+          | DoubleString
+          | Number
+          | FunctionDef
+          | TableConstruct;
+      #endregion
 
-            this.MarkPunctuation(".", ",", ";", "(", ")", "[", "]", "{", "}", "=", ":");
-            this.MarkTransient(Statement);
-        }
+      #region Statements
+      FunctionDecl.Rule = "function" + Variable + (":" + Identifier | Empty) + DefArguments + Chunk + "end";
+
+
+      var RetChunk = new NonTerminal("RetChunk");
+      RetChunk.Rule = Expression + (("," + RetChunk) | Empty);
+
+      ReturnStatement.Rule =
+          "return" + (RetChunk | Empty);
+
+      var AssignExpChunk = new NonTerminal("AssignExpChunk");
+      AssignExpChunk.Rule = Expression + (("," + AssignExpChunk) | Empty);
+      var AssignVarChunk = new NonTerminal("AssignVarChunk");
+      AssignVarChunk.Rule = Variable + (("," + AssignVarChunk) | Empty);
+
+      Assignment.Rule =
+          AssignVarChunk + "=" + AssignExpChunk;
+
+      var LocalAssignNameChunk = new NonTerminal("AssignNameChunk");
+      var LocalFunction = new NonTerminal("LocalFunction");
+      LocalAssignNameChunk.Rule = Identifier + (("," + LocalAssignNameChunk) | Empty);
+      LocalFunction.Rule = "function" + Identifier + DefArguments + Chunk + "end";
+      LocalAssignment.Rule = "local" + (LocalAssignNameChunk + ("=" + AssignExpChunk | Empty) | LocalFunction);
+
+      Elseif.Rule = "elseif" + Expression + "then" + Chunk + (Elseif | Empty);
+      Else.Rule = "else" + Chunk;
+
+      If.Rule = "if" + Expression + "then" + Chunk + (Elseif | Empty) + (Else | Empty) + "end";
+
+      While.Rule = "while" + Expression + DoBlock;
+
+      DoBlock.Rule = "do" + Chunk + "end";
+
+      Repeat.Rule = "repeat" + Chunk + "until" + Expression;
+
+      BreakStatement.Rule = "break";
+
+      var NumericFor = new NonTerminal("NumericFor");
+      NumericFor.Rule = Identifier + "=" + Expression + "," + Expression + ("," + Expression | Empty);
+      var GenericFor = new NonTerminal("GenericFor");
+      var NameList = new NonTerminal("NameList");
+      var ExpList = new NonTerminal("ExpList");
+      NameList.Rule = Identifier + (("," + NameList) | Empty);
+      ExpList.Rule = Expression + (("," + ExpList) | Empty);
+      GenericFor.Rule = NameList + "in" + ExpList;
+
+      For.Rule = "for" + (GenericFor | NumericFor) + DoBlock;
+
+      Statement.Rule =
+          ";"
+          | ReturnStatement
+          | BreakStatement
+          | Assignment
+          | LocalAssignment
+          | FunctionCall
+          | OopCall
+          | FunctionDecl
+          | For
+          | If
+          | While
+          | DoBlock
+          | Repeat;
+      #endregion
+
+      this.Root = Chunk;
+      this.MarkReservedWords(
+          "true", "false",
+          "nil", "local",
+          "function", "while",
+          "if", "for", "repeat", "until",
+          "end", "do", "return", "break");
+
+      this.MarkPunctuation(".", ",", ";", "(", ")", "[", "]", "{", "}", "=", ":");
+      this.MarkTransient(Statement);
     }
+  }
 }
