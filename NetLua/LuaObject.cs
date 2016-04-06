@@ -609,6 +609,11 @@ namespace NetLua
             }
         }
 
+        public static LuaObject operator -(LuaObject a)
+        {
+            return LuaEvents.unm_event(a);
+        }
+
         public IEnumerator<KeyValuePair<LuaObject, LuaObject>> GetEnumerator()
         {
             var table = luaobj as IEnumerable<KeyValuePair<LuaObject, LuaObject>>;
