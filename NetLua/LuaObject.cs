@@ -122,7 +122,7 @@ namespace NetLua
             return new LuaArguments(array);
         }
 
-        public static implicit operator LuaObject[](LuaArguments args)
+        public static implicit operator LuaObject[] (LuaArguments args)
         {
             return args.list.ToArray();
         }
@@ -159,7 +159,7 @@ namespace NetLua
     /// <summary>
     /// A Lua object. Can be any of the standard Lua objects
     /// </summary>
-    public class LuaObject :  DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>>
+    public class LuaObject : DynamicObject, IEnumerable<KeyValuePair<LuaObject, LuaObject>>
     {
         internal object luaobj;
         internal LuaType type;
@@ -425,7 +425,7 @@ namespace NetLua
             return fn;
         }
         #endregion
-        
+
         #region Table
         /// <summary>
         /// Creates a Lua object from a Lua table
@@ -609,6 +609,18 @@ namespace NetLua
             }
         }
 
+        public static LuaObject operator !(LuaObject a)
+        {
+            if (a == null || a.IsNil || !a.AsBool())
+            {
+                return True;
+            }
+            else
+            {
+                return False;
+            }
+        }
+
         public static LuaObject operator -(LuaObject a)
         {
             return LuaEvents.unm_event(a);
@@ -742,7 +754,7 @@ namespace NetLua
             else
                 return a;
         }
-        
+
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             result = null;
