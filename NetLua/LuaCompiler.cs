@@ -97,7 +97,7 @@ namespace NetLua
                 case BinaryOp.Concat:
                     return Expression.Call(LuaEvents_concat, left, right);
                 case BinaryOp.Different:
-                    return Expression.Negate(Expression.Call(LuaEvents_eq, left, right));
+                    return Expression.Not(Expression.Call(LuaEvents_eq, left, right));
                 case BinaryOp.Division:
                     return Expression.Divide(left, right);
                 case BinaryOp.Equal:
