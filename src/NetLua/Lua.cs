@@ -55,14 +55,5 @@ namespace NetLua
         {
             return Task.FromResult(new LuaArguments(values));
         }
-
-        /// <summary>
-        /// Helper function for returning Nil from a function
-        /// </summary>
-        /// <returns>Nil</returns>
-        public static async Task<LuaArguments> ArgsAsync(Task<LuaObject> value)
-        {
-            return new LuaArguments(await value);
-        }
     }
 }

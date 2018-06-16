@@ -24,16 +24,6 @@ namespace NetLua.Native.Value
         {
         }
 
-        ~LuaTable()
-        {
-            var method = GetMetaMethod("__gc");
-
-            if (!method.IsNil())
-            {
-                method.CallAsync(Lua.Args(this));
-            }
-        }
-
         public override LuaObject Length => FromNumber(_table.Count);
 
         public override object ToObject()

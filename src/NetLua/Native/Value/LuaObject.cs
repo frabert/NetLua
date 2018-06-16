@@ -25,6 +25,16 @@ namespace NetLua.Native.Value
             Type = type;
         }
 
+        ~LuaObject()
+        {
+            var method = GetMetaMethod("__gc");
+
+            if (!method.IsNil())
+            {
+                method.CallAsync(Lua.Args(this));
+            }
+        }
+
         public LuaType Type { get; }
 
         public LuaObject MetaTable { get; set; }
