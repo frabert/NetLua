@@ -25,7 +25,9 @@ namespace NetLua.Runtime
             for (var i = 0; i < assign.Names.Count; i++)
             {
                 var var = assign.Names[i];
-                var ret = await _engine.EvaluateExpression(assign.Values[i], context, token).FirstAsync();
+                var ret = i < assign.Values.Count
+                    ? await _engine.EvaluateExpression(assign.Values[i], context, token).FirstAsync()
+                    : LuaNil.Instance;
 
                 context.NewIndexRaw(var, ret);
             }
@@ -88,6 +90,35 @@ namespace NetLua.Runtime
 
                 var = await LuaObject.BinaryOperationAsync(BinaryOp.Addition, var, step, token);
             }
+        }
+
+        public async Task ExecuteIfStat(IfStat ifStat, LuaTable context, LuaReturnState returnState, CancellationToken token)
+        {
+            var result = await _engine.EvaluateExpression(ifStat.Condition, context, token).FirstAsync();
+
+            if (result.AsBool())
+            {
+                await _engine.ExecuteStatement(ifStat.Block, context, returnState, token);
+                return;
+            }
+
+            if (ifStat.ElseIfs.Count > 0)
+            {
+                foreach (var elseIf in ifStat.ElseIfs)
+                {
+                    result = await _engine.EvaluateExpression(elseIf.Condition, context, token).FirstAsync();
+
+                    if (!result.AsBool())
+                    {
+                        continue;
+                    }
+
+                    await _engine.ExecuteStatement(elseIf.Block, context, returnState, token);
+                    return;
+                }
+            }
+
+            await _engine.ExecuteStatement(ifStat.ElseBlock, context, returnState, token);
         }
 
         public Task ExecuteFunctionCall(FunctionCall call, LuaTable context, CancellationToken token)

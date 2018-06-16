@@ -78,8 +78,8 @@ namespace NetLua
                     return _statementInterpreter.ExecuteFunctionCall(call, context, token);
                 case Block block:
                     return _statementInterpreter.ExecuteBlock(block, context, returnState, token);
-                //case IfStat ifStat:
-                //    return CompileIfStat(ifStat, returnTarget, breakTarget, context);
+                case IfStat ifStat:
+                    return _statementInterpreter.ExecuteIfStat(ifStat, context, returnState, token);
                 case ReturnStat returnStat:
                     return _statementInterpreter.ExecuteReturnStat(returnStat, context, returnState, token);
                 //case WhileStat whileStat:

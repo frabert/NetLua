@@ -95,14 +95,7 @@ namespace NetLua.Native.Value
 
         public override void NewIndexRaw(LuaObject key, LuaObject value)
         {
-            if (value.IsNil())
-            {
-                _table.TryRemove(key, out _);
-            }
-            else
-            {
-                _table.AddOrUpdate(key, value, (k, v) => value);
-            }
+            _table.AddOrUpdate(key, value, (k, v) => value);
         }
 
         public override Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)

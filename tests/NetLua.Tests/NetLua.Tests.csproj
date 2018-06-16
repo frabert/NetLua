@@ -24,6 +24,7 @@
     <None Remove="Lua\011_Functions.lua" />
     <None Remove="Lua\012_Metatable_Global.lua" />
     <None Remove="Lua\013_Global.lua" />
+    <None Remove="Lua\014_If.lua" />
   </ItemGroup>
 
   <ItemGroup>
