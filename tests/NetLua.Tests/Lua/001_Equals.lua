@@ -16,7 +16,7 @@ assert.NotEqual("foo", "bar")
 
 -- Boolean
 assert.True(true)
-assert.False(not false)
+assert.True(not false)
 
 -- Tables
 local t1 = {}

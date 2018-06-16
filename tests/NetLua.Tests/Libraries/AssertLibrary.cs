@@ -44,7 +44,7 @@ namespace NetLua.Tests.Libraries
         [LuaMethod("False")]
         public static void False(LuaObject obj)
         {
-            Assert.True(obj.AsBool());
+            Assert.False(obj.AsBool());
         }
 
         public Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
