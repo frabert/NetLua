@@ -11,20 +11,20 @@ namespace NetLua.Tests
 {
     public class LuaTest
     {
-        private readonly LuaTable _context;
+        private readonly Engine _engine;
 
         public LuaTest()
         {
-            _context = new LuaTable();
-            _context.AddLuaLibrary();
-            _context.AddMathLibrary();
+            _engine = new Engine();
+            _engine.AddLuaLibrary();
+            _engine.AddMathLibrary();
         }
 
         [Theory]
         [MemberData(nameof(LuaDataSource.TestData), MemberType = typeof(LuaDataSource))]
         public async Task TestScript(Labeled<string> script)
         {
-            await Engine.EvalAsync(script.Data, _context);
+            await _engine.ExecuteAsync(script.Data);
         }
     }
 }

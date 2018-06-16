@@ -305,6 +305,10 @@ namespace NetLua.Native.Value
                     return FromNumber(b);
                 case sbyte @sbyte:
                     return FromNumber(@sbyte);
+                case Func<LuaArguments, LuaArguments> directFunc:
+                    return FromFunction(directFunc);
+                case Func<LuaArguments, CancellationToken, Task<LuaArguments>> asyncFunc:
+                    return FromFunction(asyncFunc);
             }
 
             if (LuaProxyCache.IsValid(obj.GetType()))
@@ -315,22 +319,17 @@ namespace NetLua.Native.Value
             throw new ArgumentException("Cannot transform the object to a Lua Object", nameof(obj));
         }
 
-        public static LuaObject CreateFunction(Func<LuaArguments, CancellationToken, Task<LuaArguments>> func)
+        public static LuaObject FromFunction(Func<LuaArguments, CancellationToken, Task<LuaArguments>> func)
         {
             return new LuaAsyncFunction(func);
         }
 
-        public static LuaObject CreateFunction(FunctionDefinition definition, LuaTable context)
-        {
-            return new LuaInterpreterFunction(definition, context);
-        }
-
-        public static LuaObject CreateFunction(Func<LuaArguments, LuaArguments> func)
+        public static LuaObject FromFunction(Func<LuaArguments, LuaArguments> func)
         {
             return new LuaDirectFunction(func);
         }
 
-        public static LuaObject CreateFunction(MethodInfo method)
+        public static LuaObject FromFunction(MethodInfo method)
         {
             return MethodUtils.CreateFunction(method);
         }

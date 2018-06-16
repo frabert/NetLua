@@ -38,19 +38,6 @@ namespace NetLua.Runtime
             return (ParseBlock(root));
         }
 
-        public Block ParseFile(string Filename)
-        {
-            string source = System.IO.File.ReadAllText(Filename);
-            ParseTree parseTree = parser.Parse(source, Filename);
-            ParseTreeNode root = parseTree.Root;
-            if (root == null)
-            {
-                Irony.LogMessage msg = parseTree.ParserMessages[0];
-                throw new LuaException(Filename, msg.Location.Line, msg.Location.Column, msg.Message);
-            }
-            return (ParseBlock(root));
-        }
-
         #region Binary expression tree
         IExpression ParseOrOp(ParseTreeNode node)
         {

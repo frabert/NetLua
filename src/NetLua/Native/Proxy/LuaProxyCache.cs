@@ -73,7 +73,7 @@ namespace NetLua.Native.Proxy
 
             return new LuaProxyCacheItem
             {
-                Methods = methods.ToDictionary(m => m.Name, m => LuaObject.CreateFunction(m.Info)),
+                Methods = methods.ToDictionary(m => m.Name, m => LuaObject.FromFunction(m.Info)),
                 Properties = properties.ToDictionary(p => p.Info.Name, p => p)
             };
         }

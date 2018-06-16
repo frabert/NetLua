@@ -18,6 +18,7 @@
     <None Remove="Lua\009_Varargs_Table.lua" />
     <None Remove="Lua\010_Varargs_Function.lua" />
     <None Remove="Lua\011_Functions.lua" />
+    <None Remove="Lua\012_Metatable_Global.lua" />
   </ItemGroup>
 
   <ItemGroup>

@@ -116,7 +116,7 @@ namespace NetLua.Libraries
                 throw new LuaException("t must be a table");
             }
 
-            return Lua.Args(LuaObject.CreateFunction(GetNext), args[0], 0);
+            return Lua.Args(LuaObject.FromFunction(GetNext), args[0], 0);
         }
 
         public static async Task<LuaArguments> Next(LuaArguments args, CancellationToken token = default(CancellationToken))

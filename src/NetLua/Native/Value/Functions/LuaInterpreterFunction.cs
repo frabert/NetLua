@@ -8,10 +8,12 @@ namespace NetLua.Native.Value.Functions
 {
     public class LuaInterpreterFunction : LuaFunction
     {
+        private readonly Engine _engine;
         private readonly FunctionDefinition _definition;
 
-        public LuaInterpreterFunction(FunctionDefinition definition, LuaObject context)
+        public LuaInterpreterFunction(Engine engine, FunctionDefinition definition, LuaObject context)
         {
+            _engine = engine;
             _definition = definition;
             Context = context;
         }
@@ -37,7 +39,7 @@ namespace NetLua.Native.Value.Functions
 
             // Execute the statements.
             var returnState = new LuaReturnState();
-            await Engine.ExecuteStatement(_definition.Body, context, returnState, token);
+            await _engine.ExecuteStatement(_definition.Body, context, returnState, token);
 
             return returnState.ReturnArguments;
         }
