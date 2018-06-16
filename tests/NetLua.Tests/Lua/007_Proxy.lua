@@ -1,9 +1,12 @@
 ﻿-- Access
-assert(math.abs(-1) == 1, "call")
+assert.Equal(math.abs(-1), 1)
 
 -- Overwriting functions
+local original = math.abs
+
 math.abs = function()
 	return "success"
 end
 
-assert(math.abs(-1) == "success", "overwriting")
+assert.Equal(math.abs(-1), "success")
+math.abs = original

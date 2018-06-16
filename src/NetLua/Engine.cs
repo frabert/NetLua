@@ -39,9 +39,14 @@ namespace NetLua
             return Global.IndexRaw(key);
         }
 
-        public async Task<LuaArguments> ExecuteAsync(string str, CancellationToken token = default)
+        public Task<LuaArguments> ExecuteAsync(string str, CancellationToken token = default)
         {
-            return await Parse(str).CallAsync(Lua.Args(), token);
+            return ExecuteAsync(str, Lua.Args(), token);
+        }
+
+        public Task<LuaArguments> ExecuteAsync(string str, LuaArguments args, CancellationToken token = default)
+        {
+            return Parse(str).CallAsync(args, token);
         }
 
         public LuaFunction Parse(string str)
@@ -53,7 +58,7 @@ namespace NetLua
                 Varargs = true
             };
 
-            return new LuaInterpreterFunction(this, functionDefinition, Global);
+            return new LuaInterpreterFunction(this, functionDefinition, Global, true);
         }
 
         public Task ExecuteStatement(IStatement stat, LuaTable context, LuaReturnState returnState, CancellationToken token = default)
@@ -89,6 +94,7 @@ namespace NetLua
                     throw new NotImplementedException(stat.GetType().Name);
             }
         }
+
         public async Task<LuaArguments> EvaluateExpression(IList<IExpression> exprs, LuaTable context, CancellationToken token = default)
         {
             var results = new List<LuaObject>();

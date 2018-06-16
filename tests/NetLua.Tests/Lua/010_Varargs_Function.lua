@@ -3,9 +3,9 @@
 end
 
 function expect_foo_bar_baz(a1, a2, a3)
-	assert(a1 == "foo", "a1 - foo")
-	assert(a2 == "bar", "a2 - bar")
-	assert(a3 == "baz", "a3 - baz")
+	assert.Equal(a1, "foo")
+	assert.Equal(a2, "bar")
+	assert.Equal(a3, "baz")
 end
 
 expect_foo_bar_baz(ret("foo", "bar", "baz"))

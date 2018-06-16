@@ -44,7 +44,7 @@ namespace NetLua.Native.Proxy
                 .Concat(type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 .Select(m =>
                 {
-                    var attr = type.GetCustomAttribute<LuaMethodAttribute>();
+                    var attr = m.GetCustomAttributeDeep<LuaMethodAttribute>();
 
                     return new
                     {
@@ -58,7 +58,7 @@ namespace NetLua.Native.Proxy
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(p =>
                 {
-                    var attr = type.GetCustomAttribute<LuaPropertyAttribute>();
+                    var attr = p.GetCustomAttributeDeep<LuaPropertyAttribute>();
                     var access = attr?.Access ?? propertyDefaultVisible;
 
                     return new LuaProxyCacheItemProperty

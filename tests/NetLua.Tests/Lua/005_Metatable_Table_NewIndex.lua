@@ -7,4 +7,4 @@ __newindex = data
 
 t.a = true
 
-assert(data.a)
+assert.True(data.a)

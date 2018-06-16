@@ -4,8 +4,8 @@
 	end
 })
 
-assert(a == "nope")
+assert.Equal(a, "nope")
 
-a = "test"
+a = "yup"
 
-assert(a, "test")
+assert.Equal(a, "yup")

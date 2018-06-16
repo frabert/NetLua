@@ -1,5 +1,5 @@
 ﻿local t = { "foo", "bar" }
-assert(t[1] == "foo", "index at one")
+assert.Equal(t[1], "foo")
 
 t = { [0] = "foo", "bar" }
-assert(t[0] == "foo", "index at zero")
+assert.Equal(t[0], "foo")

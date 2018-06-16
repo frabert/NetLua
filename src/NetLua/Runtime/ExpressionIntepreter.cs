@@ -144,7 +144,7 @@ namespace NetLua.Runtime
 
         public Task<LuaArguments> EvaluateFunctionDefinition(FunctionDefinition definition, LuaTable context, CancellationToken token = default)
         {
-            return Lua.ArgsAsync(new LuaInterpreterFunction(_engine, definition, context));
+            return Lua.ArgsAsync(new LuaInterpreterFunction(_engine, definition, context, false));
         }
     }
 }

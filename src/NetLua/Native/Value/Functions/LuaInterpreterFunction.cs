@@ -10,19 +10,21 @@ namespace NetLua.Native.Value.Functions
     {
         private readonly Engine _engine;
         private readonly FunctionDefinition _definition;
+        private readonly bool _useParent;
 
-        public LuaInterpreterFunction(Engine engine, FunctionDefinition definition, LuaObject context)
+        public LuaInterpreterFunction(Engine engine, FunctionDefinition definition, LuaObject context, bool useParent)
         {
             _engine = engine;
             _definition = definition;
             Context = context;
+            _useParent = useParent;
         }
 
         public LuaObject Context { get; set; }
 
         public override async Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
         {
-            var context = new LuaTableFunction(Context);
+            var context = new LuaTableFunction(Context, _useParent);
 
             // Set the arguments.
             var i = 0;

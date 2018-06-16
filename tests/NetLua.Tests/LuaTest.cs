@@ -5,6 +5,7 @@ using NetLua.Libraries;
 using NetLua.Native;
 using NetLua.Native.Value;
 using NetLua.Runtime;
+using NetLua.Tests.Extensions;
 using Xunit;
 
 namespace NetLua.Tests
@@ -18,6 +19,7 @@ namespace NetLua.Tests
             _engine = new Engine();
             _engine.AddLuaLibrary();
             _engine.AddMathLibrary();
+            _engine.AddAssertLibrary();
         }
 
         [Theory]

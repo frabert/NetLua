@@ -13,6 +13,6 @@ setmetatable(t2, {
     end
 })
 
-assert(t1 + t2 == 1)
-assert(t2 + t1 == 2)
-assert(t2 + t2 == 2)
+assert.Equal(t1 + t2, 1)
+assert.Equal(t2 + t1, 2)
+assert.Equal(t2 + t2, 2)

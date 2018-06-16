@@ -7,13 +7,33 @@ namespace NetLua.Native.Value
     internal class LuaTableFunction : LuaTable
     {
         private LuaObject[] _varargs;
+        private readonly bool _useParent;
 
-        internal LuaTableFunction(LuaObject parent) : base(parent)
+        internal LuaTableFunction(LuaObject parent, bool useParent) 
+            : base(parent)
         {
+            _useParent = useParent;
         }
 
-        public LuaTableFunction()
+        public override LuaObject IndexRaw(LuaObject key)
         {
+            if (_useParent && Parent != null)
+            {
+                return Parent.IndexRaw(key);
+            }
+
+            return base.IndexRaw(key);
+        }
+
+        public override void NewIndexRaw(LuaObject key, LuaObject value)
+        {
+            if (_useParent && Parent != null)
+            {
+                Parent.NewIndexRaw(key, value);
+                return;
+            }
+
+            base.NewIndexRaw(key, value);
         }
 
         internal LuaObject[] Varargs

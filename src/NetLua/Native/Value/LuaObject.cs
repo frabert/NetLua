@@ -212,7 +212,7 @@ namespace NetLua.Native.Value
 
         public object ToObject(Type target)
         {
-            if (target.IsAssignableFrom(typeof(LuaObject)))
+            if (typeof(LuaObject).IsAssignableFrom(target))
             {
                 return this;
             }

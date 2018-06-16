@@ -6,6 +6,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="Lua\001_Equals.lua" />
     <None Remove="Lua\002_Context.lua" />
@@ -19,6 +23,7 @@
     <None Remove="Lua\010_Varargs_Function.lua" />
     <None Remove="Lua\011_Functions.lua" />
     <None Remove="Lua\012_Metatable_Global.lua" />
+    <None Remove="Lua\013_Global.lua" />
   </ItemGroup>
 
   <ItemGroup>

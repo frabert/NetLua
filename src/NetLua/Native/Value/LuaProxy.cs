@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using NetLua.Native.Proxy;
 
 namespace NetLua.Native.Value
@@ -75,6 +77,16 @@ namespace NetLua.Native.Value
             }
 
             property.Info.SetValue(_instance, value.ToObject(property.Info.PropertyType));
+        }
+
+        public override Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        {
+            if (_instance is ICallableProxy proxy)
+            {
+                return proxy.CallAsync(args, token);
+            }
+
+            return base.CallAsync(args, token);
         }
     }
 }

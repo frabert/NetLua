@@ -1,24 +1,26 @@
 ﻿-- Numbers
 local one = 1
-assert(1 == 1, "same numbers")
-assert(1 == one, "same number and var")
-assert(1 ~= 10, "different numbers")
-assert(-1 == -one, "unary variable")
+
+assert.Equal(1, 1)
+assert.Equal(1, one)
+assert.Equal(-1, -one)
+assert.NotEqual(1, 10)
 
 -- Strings
 local foo = "foo"
-assert("" == "", "empty string")
-assert(foo == "foo", "same var and string")
-assert("foo" ~= "bar", "different strings")
-assert("foobar" == "foo" .. "bar", "string concat")
+
+assert.Equal("", "")
+assert.Equal(foo, "foo")
+assert.Equal("foobar", "foo" .. "bar")
+assert.NotEqual("foo", "bar")
 
 -- Boolean
-assert(true, "true")
-assert(not false, "not false")
+assert.True(true)
+assert.False(not false)
 
 -- Tables
 local t1 = {}
 local t2 = {}
 
-assert(t1 == t1, "same tables")
-assert(t1 ~= t2, "different tables")
+assert.Equal(t1, t1)
+assert.NotEqual(t1, t2)

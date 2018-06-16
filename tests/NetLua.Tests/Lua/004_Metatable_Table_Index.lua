@@ -2,4 +2,4 @@
 
 setmetatable(t, {__index = {a = true}})
 
-assert(t.a)
+assert.True(t.a)

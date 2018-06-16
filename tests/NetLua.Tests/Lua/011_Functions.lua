@@ -1,5 +1,5 @@
 ﻿function expect_foo(val)
-	assert(val == "foo")
+	assert.Equal(val, "foo")
 end
 
 expect_foo("foo")
