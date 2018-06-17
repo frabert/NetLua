@@ -20,27 +20,27 @@ namespace NetLua.Runtime
             _engine = engine;
         }
 
-        public async Task<LuaArguments> EvaluateBinaryExpressionAsync(BinaryExpression expr, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateBinaryExpressionAsync(BinaryExpression expr, LuaState state, CancellationToken token = default)
         {
-            var left = await _engine.EvaluateExpression(expr.Left, context, token).FirstAsync();
-            var right = await _engine.EvaluateExpression(expr.Right, context, token).FirstAsync();
+            var left = await _engine.EvaluateExpression(expr.Left, state, token).FirstAsync();
+            var right = await _engine.EvaluateExpression(expr.Right, state, token).FirstAsync();
 
             return await LuaObject.BinaryOperationAsync(expr.Operation, left, right, token).ToArgsAsync();
         }
 
-        public async Task<LuaArguments> EvaluateTableAccess(TableAccess access, LuaTable context, CancellationToken token)
+        public async Task<LuaArguments> EvaluateTableAccess(TableAccess access, LuaState state, CancellationToken token)
         {
-            var expr = await _engine.EvaluateExpression(access.Expression, context, token).FirstAsync();
-            var index = await _engine.EvaluateExpression(access.Index, context, token).FirstAsync();
+            var expr = await _engine.EvaluateExpression(access.Expression, state, token).FirstAsync();
+            var index = await _engine.EvaluateExpression(access.Index, state, token).FirstAsync();
 
             return await expr.IndexAsync(index, token).ToArgsAsync();
         }
 
-        public async Task<LuaArguments> EvaluateGetVariableAsync(Variable variable, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateGetVariableAsync(Variable variable, LuaState state, CancellationToken token = default)
         {
             var from = variable.Prefix != null
-                ? await _engine.EvaluateExpression(variable.Prefix, context, token).FirstAsync()
-                : context;
+                ? await _engine.EvaluateExpression(variable.Prefix, state, token).FirstAsync()
+                : state.Context;
 
             if (from.IsNil())
             {
@@ -50,17 +50,17 @@ namespace NetLua.Runtime
             return await from.IndexAsync(variable.Name, token).ToArgsAsync();
         }
 
-        public async Task<LuaArguments> EvaluateFunctionCall(FunctionCall expr, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateFunctionCall(FunctionCall expr, LuaState state, CancellationToken token = default)
         {
-            var args = await _engine.EvaluateExpression(expr.Arguments, context, token);
-            var function = await _engine.EvaluateExpression(expr.Function, context, token).FirstAsync();
+            var args = await _engine.EvaluateExpression(expr.Arguments, state, token);
+            var function = await _engine.EvaluateExpression(expr.Function, state, token).FirstAsync();
 
             return await function.CallAsync(args, token);
         }
 
-        public async Task<LuaArguments> EvaluateUnaryExpression(UnaryExpression expr, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateUnaryExpression(UnaryExpression expr, LuaState state, CancellationToken token = default)
         {
-            var op = await _engine.EvaluateExpression(expr.Expression, context, token).FirstAsync();
+            var op = await _engine.EvaluateExpression(expr.Expression, state, token).FirstAsync();
 
             switch (expr.Operation)
             {
@@ -75,24 +75,24 @@ namespace NetLua.Runtime
             }
         }
 
-        public Task<LuaArguments> EvaluateVarargs(LuaTable context)
+        public Task<LuaArguments> EvaluateVarargs(LuaState state)
         {
-            LuaObject current = context;
+            var current = state.Context;
 
             while (!(current is LuaTableFunction))
             {
-                current = context.Parent;
-
-                if (current.IsNil())
+                if (current.Parent.IsNil())
                 {
                     return Lua.ArgsAsync();
                 }
+
+                current = (LuaTable) current.Parent;
             }
 
-            return Lua.ArgsAsync(((LuaTableFunction)current).Varargs);
+            return Lua.ArgsAsync(((LuaTableFunction) current).Varargs);
         }
 
-        public async Task<LuaArguments> EvaluateTableConstructor(TableConstructor constructor, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateTableConstructor(TableConstructor constructor, LuaState state, CancellationToken token = default)
         {
             var table = LuaObject.CreateTable();
             var keyCounter = (int?)1;
@@ -123,13 +123,13 @@ namespace NetLua.Runtime
                 }
                 else
                 {
-                    key = await _engine.EvaluateExpression(kv.Key, context, token).FirstAsync();
+                    key = await _engine.EvaluateExpression(kv.Key, state, token).FirstAsync();
                     keyCounter = null;
                     addAll = false;
                 }
 
                 // Get the value.
-                var value = await _engine.EvaluateExpression(kv.Value, context, token);
+                var value = await _engine.EvaluateExpression(kv.Value, state, token);
 
                 if (addAll)
                 {
@@ -147,9 +147,9 @@ namespace NetLua.Runtime
             return Lua.Args(table);
         }
 
-        public Task<LuaArguments> EvaluateFunctionDefinition(FunctionDefinition definition, LuaTable context, CancellationToken token = default)
+        public Task<LuaArguments> EvaluateFunctionDefinition(FunctionDefinition definition, LuaState state, CancellationToken token = default)
         {
-            return Lua.ArgsAsync(new LuaInterpreterFunction(_engine, definition, context, false));
+            return Lua.ArgsAsync(new LuaInterpreterFunction(_engine, definition, state.Context, false));
         }
     }
 }

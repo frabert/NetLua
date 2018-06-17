@@ -2,8 +2,8 @@
 
 function test()
 	local foo = "baz"
-	assert.Equal(foo, "baz")
+	assert.Equal("baz", foo)
 end
 
 test()
-assert.Equal(foo, "bar")
+assert.Equal("bar", foo)

@@ -5,22 +5,18 @@ using NetLua.Native;
 
 namespace NetLua.Runtime
 {
-    public sealed class LuaReturnState
+    public sealed class LuaFunctionState
     {
-        public LuaReturnState()
+        public LuaFunctionState()
         {
             ReturnArguments = Lua.Args();
         }
 
         public LuaArguments ReturnArguments { get; private set; }
 
-        public bool ShouldStop => DidReturn || DidBreak;
-
         public bool DidReturn { get; private set; }
 
-        public bool DidBreak { get; private set; }
-
-        public void Return(LuaArguments args)
+        public void SetResult(LuaArguments args)
         {
             ReturnArguments = args;
             DidReturn = true;

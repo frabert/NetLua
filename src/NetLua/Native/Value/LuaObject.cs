@@ -21,6 +21,8 @@ namespace NetLua.Native.Value
     /// </summary>
     public abstract class LuaObject
     {
+        private Engine _engine;
+
         protected LuaObject(LuaType type)
         {
             MetaTable = LuaNil.Instance;
@@ -39,9 +41,9 @@ namespace NetLua.Native.Value
 
         public LuaType Type { get; }
 
-        public virtual IEnumerable<LuaObject> Keys => Enumerable.Empty<LuaObject>();
-
         public LuaObject MetaTable { get; set; }
+
+        public virtual IEnumerable<LuaObject> Keys => Enumerable.Empty<LuaObject>();
 
         public virtual LuaObject Length => throw new LuaException($"attempt to get length of a {Type.ToName()} value");
 

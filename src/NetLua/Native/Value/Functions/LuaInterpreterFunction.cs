@@ -40,10 +40,10 @@ namespace NetLua.Native.Value.Functions
             }
 
             // Execute the statements.
-            var returnState = new LuaReturnState();
-            await _engine.ExecuteStatement(_definition.Body, context, returnState, token);
+            var state = new LuaState(context);
+            await _engine.ExecuteStatement(_definition.Body, state, token);
 
-            return returnState.ReturnArguments;
+            return state.FunctionState.ReturnArguments;
         }
 
         public override object ToObject()

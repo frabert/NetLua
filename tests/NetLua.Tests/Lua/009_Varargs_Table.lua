@@ -3,21 +3,21 @@
 end
 
 local t = createtable("foo", "bar")
-assert.Equal(t[1], "foo")
-assert.Equal(t[2], "bar")
+assert.Equal("foo", t[1])
+assert.Equal("bar", t[2])
 
 function createtable2(...)
 	return {..., "baz"}
 end
 
 local t2 = createtable2("foo", "bar")
-assert.Equal(t2[1], "foo")
-assert.Equal(t2[2], "baz")
+assert.Equal("foo", t2[1])
+assert.Equal("baz", t2[2])
 
 function ret(...)
 	return ...
 end
 
 local t3 = {ret("foo", "bar")}
-assert.Equal(t3[1], "foo")
-assert.Equal(t3[2], "bar")
+assert.Equal("foo", t3[1])
+assert.Equal("bar", t3[2])

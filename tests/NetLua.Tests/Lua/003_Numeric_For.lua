@@ -5,7 +5,7 @@ for i = 1, 5 do
 	var = var .. i
 end
 
-assert.Equal(var, "12345")
+assert.Equal("12345", var)
 
 -- Inverted for-loop
 var = ""
@@ -14,4 +14,4 @@ for i = 5, 1, -1 do
 	var = var .. i
 end
 
-assert.Equal(var, "54321")
+assert.Equal("54321", var)

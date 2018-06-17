@@ -17,17 +17,24 @@ namespace NetLua
         private readonly LuaParser _parser = new LuaParser();
         private readonly StatementInterpreter _statementInterpreter;
         private readonly ExpressionIntepreter _expressionIntepreter;
+        private readonly IDictionary<Type, LuaTable> _defaultMetaTables;
 
         public Engine()
         {
             Global = new LuaTable();
             _statementInterpreter = new StatementInterpreter(this);
             _expressionIntepreter = new ExpressionIntepreter(this);
+            _defaultMetaTables = new Dictionary<Type, LuaTable>();
 
             Global.NewIndexRaw("_G", Global);
         }
 
         public LuaTable Global { get; }
+
+        public LuaObject GetDefaultMetaTable(Type type)
+        {
+            return _defaultMetaTables.ContainsKey(type) ? _defaultMetaTables[type] : LuaNil.Instance;
+        }
 
         public void Set(LuaObject key, LuaObject value)
         {
@@ -61,9 +68,9 @@ namespace NetLua
             return new LuaInterpreterFunction(this, functionDefinition, Global, true);
         }
 
-        public Task ExecuteStatement(IStatement stat, LuaTable context, LuaReturnState returnState, CancellationToken token = default)
+        public Task ExecuteStatement(IStatement stat, LuaState state, CancellationToken token = default)
         {
-            if (returnState.DidReturn || token.IsCancellationRequested)
+            if (state.FunctionState.DidReturn || token.IsCancellationRequested)
             {
                 return Task.CompletedTask;
             }
@@ -71,38 +78,38 @@ namespace NetLua
             switch (stat)
             {
                 case Assignment assignment:
-                    return _statementInterpreter.ExecuteAssignment(assignment, context, token);
+                    return _statementInterpreter.ExecuteAssignment(assignment, state, token);
                 case LocalAssignment localAssignment:
-                    return _statementInterpreter.ExecuteLocalAssignment(localAssignment, context, token);
+                    return _statementInterpreter.ExecuteLocalAssignment(localAssignment, state, token);
                 case FunctionCall call:
-                    return _statementInterpreter.ExecuteFunctionCall(call, context, token);
+                    return _statementInterpreter.ExecuteFunctionCall(call, state, token);
                 case Block block:
-                    return _statementInterpreter.ExecuteBlock(block, context, returnState, token);
+                    return _statementInterpreter.ExecuteBlock(block, state, token);
                 case IfStat ifStat:
-                    return _statementInterpreter.ExecuteIfStat(ifStat, context, returnState, token);
+                    return _statementInterpreter.ExecuteIfStat(ifStat, state, token);
                 case ReturnStat returnStat:
-                    return _statementInterpreter.ExecuteReturnStat(returnStat, context, returnState, token);
+                    return _statementInterpreter.ExecuteReturnStat(returnStat, state, token);
                 case WhileStat whileStat:
-                    return _statementInterpreter.ExecuteWhileStat(whileStat, context, returnState, token);
+                    return _statementInterpreter.ExecuteWhileStat(whileStat, state, token);
                 case RepeatStat repeatStat:
-                    return _statementInterpreter.ExecuteRepeatStat(repeatStat, context, returnState, token);
+                    return _statementInterpreter.ExecuteRepeatStat(repeatStat, state, token);
                 case GenericFor genericFor:
-                    return _statementInterpreter.ExecuteGenericFor(genericFor, context, returnState, token);
+                    return _statementInterpreter.ExecuteGenericFor(genericFor, state, token);
                 case NumericFor numericFor:
-                    return _statementInterpreter.ExecuteNumericFor(numericFor, context, returnState, token);
+                    return _statementInterpreter.ExecuteNumericFor(numericFor, state, token);
                 default:
                     throw new NotImplementedException(stat.GetType().Name);
             }
         }
 
-        public async Task<LuaArguments> EvaluateExpression(IList<IExpression> exprs, LuaTable context, CancellationToken token = default)
+        public async Task<LuaArguments> EvaluateExpression(IList<IExpression> exprs, LuaState state, CancellationToken token = default)
         {
             var results = new List<LuaObject>();
 
             for (var i = 0; i < exprs.Count; i++)
             {
                 var addAll = i == exprs.Count - 1;
-                var objects = await EvaluateExpression(exprs[i], context, token);
+                var objects = await EvaluateExpression(exprs[i], state, token);
 
                 if (addAll) results.AddRange(objects);
                 else results.Add(objects[0]);
@@ -111,7 +118,7 @@ namespace NetLua
             return Lua.Args(results);
         }
 
-        public Task<LuaArguments> EvaluateExpression(IExpression expr, LuaTable context, CancellationToken token = default)
+        public Task<LuaArguments> EvaluateExpression(IExpression expr, LuaState state, CancellationToken token = default)
         {
             switch (expr)
             {
@@ -124,21 +131,21 @@ namespace NetLua
                 case NilLiteral _:
                     return Lua.ArgsAsync(LuaNil.Instance);
                 case BinaryExpression binaryExpression:
-                    return _expressionIntepreter.EvaluateBinaryExpressionAsync(binaryExpression, context, token);
+                    return _expressionIntepreter.EvaluateBinaryExpressionAsync(binaryExpression, state, token);
                 case UnaryExpression expression:
-                    return _expressionIntepreter.EvaluateUnaryExpression(expression, context, token);
+                    return _expressionIntepreter.EvaluateUnaryExpression(expression, state, token);
                 case Variable variable:
-                    return _expressionIntepreter.EvaluateGetVariableAsync(variable, context, token);
+                    return _expressionIntepreter.EvaluateGetVariableAsync(variable, state, token);
                 case TableAccess access:
-                    return _expressionIntepreter.EvaluateTableAccess(access, context, token);
+                    return _expressionIntepreter.EvaluateTableAccess(access, state, token);
                 case FunctionCall call:
-                    return _expressionIntepreter.EvaluateFunctionCall(call, context, token);
+                    return _expressionIntepreter.EvaluateFunctionCall(call, state, token);
                 case FunctionDefinition definition:
-                    return _expressionIntepreter.EvaluateFunctionDefinition(definition, context, token);
+                    return _expressionIntepreter.EvaluateFunctionDefinition(definition, state, token);
                 case VarargsLiteral _:
-                    return _expressionIntepreter.EvaluateVarargs(context);
+                    return _expressionIntepreter.EvaluateVarargs(state);
                 case TableConstructor constructor:
-                    return _expressionIntepreter.EvaluateTableConstructor(constructor, context, token);
+                    return _expressionIntepreter.EvaluateTableConstructor(constructor, state, token);
                 default:
                     throw new NotImplementedException(expr.GetType().Name);
             }
