@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Lua\001_Equals.lua" />
+    <None Remove="Lua\002_Context.lua" />
+    <None Remove="Lua\003_Numeric_For.lua" />
+    <None Remove="Lua\004_Metatable_Table_Index.lua" />
+    <None Remove="Lua\005_Metatable_Table_NewIndex.lua" />
+    <None Remove="Lua\006_Metatable_Table_Add.lua" />
+    <None Remove="Lua\007_Proxy.lua" />
+    <None Remove="Lua\008_Table_Index.lua" />
+    <None Remove="Lua\009_Varargs_Table.lua" />
+    <None Remove="Lua\010_Varargs_Function.lua" />
+    <None Remove="Lua\011_Functions.lua" />
+    <None Remove="Lua\012_Metatable_Global.lua" />
+    <None Remove="Lua\013_Global.lua" />
+    <None Remove="Lua\014_If.lua" />
+    <None Remove="Lua\015_While.lua" />
+    <None Remove="Lua\016_Repeat.lua" />
+    <None Remove="Lua\017_Repeat_Scope.lua" />
+    <None Remove="Lua\018_Generic_For.lua" />
+    <None Remove="Lua\019_Ipairs.lua" />
+    <None Remove="Lua\020_Pairs.lua" />
+    <None Remove="Lua\021_Md5.lua" />
+    <None Remove="Lua\022_String_MultiLine.lua" />
+    <None Remove="Lua\023_Number_Hex.lua" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Lua\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Lua\TestSuites\**" />
+    <EmbeddedResource Remove="Lua\TestSuites\**" />
+    <None Remove="Lua\TestSuites\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetLua\NetLua.csproj" />
+  </ItemGroup>
+
+</Project>
