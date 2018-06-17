@@ -31,6 +31,9 @@
     <None Remove="Lua\018_Generic_For.lua" />
     <None Remove="Lua\019_Ipairs.lua" />
     <None Remove="Lua\020_Pairs.lua" />
+    <None Remove="Lua\021_Md5.lua" />
+    <None Remove="Lua\022_String_MultiLine.lua" />
+    <None Remove="Lua\023_Number_Hex.lua" />
   </ItemGroup>
 
   <ItemGroup>

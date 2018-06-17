@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Irony.Parsing;
 using NetLua.Native;
 using NetLua.Runtime.Ast;
@@ -298,7 +300,6 @@ namespace NetLua.Runtime
             {
                 LocalAssignment assign = new LocalAssignment();
 
-
                 var child = node.ChildNodes[1];
 
                 if (child.ChildNodes[0].Term.Name == "LocalFunction")
@@ -316,7 +317,10 @@ namespace NetLua.Runtime
                         argsNode = argsNode.ChildNodes[0];
                         while (argsNode.ChildNodes.Count > 0)
                         {
-                            string ident = argsNode.ChildNodes[0].Token.ValueString;
+                            var current = argsNode.ChildNodes[0];
+                            var token = current.Token ?? current.ChildNodes.FirstOrDefault()?.Token ?? throw new NullReferenceException("Could not find the token.");
+
+                            string ident = token.ValueString;
                             func.Arguments.Add(new Argument() { Name = ident });
                             if (argsNode.ChildNodes.Count == 1)
                                 break;
@@ -712,6 +716,24 @@ namespace NetLua.Runtime
                 else if (child.Term != null && child.Term.Name == "Varargs")
                 {
                     return new VarargsLiteral();
+                }
+                else if (child.Token != null && child.Term != null && child.Term.Name == "string")
+                {
+                    var text = child.Token.Text.Substring(2, child.Token.Text.Length - 4);
+
+                    // Make sure we always have "\n"-new lines.
+                    text = Regex.Replace(text, "\\r\\n?", "\n");
+
+                    // Remove the first character if it starts with a new line.
+                    if (text[0] == '\n')
+                    {
+                        text = text.Substring(1);
+                    }
+
+                    return new Ast.StringLiteral
+                    {
+                        Value = text
+                    };
                 }
             }
             throw new Exception("Invalid Expression node");

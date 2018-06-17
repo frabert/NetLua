@@ -42,6 +42,11 @@ namespace NetLua.Runtime
                 ? await _engine.EvaluateExpression(variable.Prefix, context, token).FirstAsync()
                 : context;
 
+            if (from.IsNil())
+            {
+                throw new LuaException($"attempt to index a nil value near {variable.Name}");
+            }
+
             return await from.IndexAsync(variable.Name, token).ToArgsAsync();
         }
 

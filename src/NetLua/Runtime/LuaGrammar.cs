@@ -2,6 +2,7 @@
  * See LICENSE file
  */
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Irony.Parsing;
 
@@ -14,13 +15,15 @@ namespace NetLua.Runtime
             : base(true)
         {
             #region Terminals
-            Terminal Identifier = new IdentifierTerminal("identifier");
-            Terminal SingleString = new StringLiteral("string", "'", StringOptions.AllowsAllEscapes);
-            Terminal DoubleString = new StringLiteral("string", "\"", StringOptions.AllowsAllEscapes);
-            Terminal Number = new NumberLiteral("number", NumberOptions.AllowSign);
+            var Identifier = new IdentifierTerminal("identifier");
+            var SingleString = new StringLiteral("string", "'", StringOptions.AllowsAllEscapes);
+            var DoubleString = new StringLiteral("string", "\"", StringOptions.AllowsAllEscapes);
+            var MultiLineString = new CommentTerminal("string", "[[", "]]");
+            var Number = new NumberLiteral("number");
+            Number.AddPrefix("0x", NumberOptions.Hex);
 
-            Terminal LineComment = new CommentTerminal("Comment", "--", "\n", "\r");
-            Terminal LongComment = new CommentTerminal("LongComment", "--[[", "]]");
+            var LineComment = new CommentTerminal("Comment", "--", "\n", "\r");
+            var LongComment = new CommentTerminal("LongComment", "--[[", "]]");
 
             base.NonGrammarTerminals.Add(LineComment);
             base.NonGrammarTerminals.Add(LongComment);
@@ -136,6 +139,7 @@ namespace NetLua.Runtime
                 | "nil"
                 | SingleString
                 | DoubleString
+                | MultiLineString
                 | Number
                 | FunctionDef
                 | TableConstruct;
