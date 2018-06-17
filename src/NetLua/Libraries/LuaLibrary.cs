@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NetLua.Extensions;
@@ -63,7 +65,7 @@ namespace NetLua.Libraries
             return Lua.Args(args[0].ToNumber());
         }
 
-        public static Task<LuaArguments> Tostring(LuaArguments args, CancellationToken token = default(CancellationToken))
+        public static Task<LuaArguments> Tostring(LuaArguments args, CancellationToken token = default)
         {
             return Lua.ArgsAsync(args[0].AsString());
         }
@@ -93,7 +95,7 @@ namespace NetLua.Libraries
             }
         }
 
-        private static async Task<LuaArguments> GetNext(LuaArguments x, CancellationToken token = default(CancellationToken))
+        private static async Task<LuaArguments> GetNext(LuaArguments x, CancellationToken token = default)
         {
             var s = x[0];
             var var = x[1].AsNumber() + 1;
@@ -102,13 +104,13 @@ namespace NetLua.Libraries
             return val.IsNil() ? Lua.Args(LuaNil.Instance) : Lua.Args(var, val);
         }
 
-        public static async Task<LuaArguments> Ipairs(LuaArguments args, CancellationToken token = default(CancellationToken))
+        public static Task<LuaArguments> Ipairs(LuaArguments args, CancellationToken token = default)
         {
             var handler = args[0].GetMetaMethod("__ipairs");
 
             if (!handler.IsNil())
             {
-                return await handler.CallAsync(args, token);
+                return handler.CallAsync(args, token);
             }
 
             if (!args[0].IsTable())
@@ -116,17 +118,42 @@ namespace NetLua.Libraries
                 throw new LuaException("t must be a table");
             }
 
-            return Lua.Args(LuaObject.FromFunction(GetNext), args[0], 0);
+            return Lua.ArgsAsync(LuaObject.FromFunction(GetNext), args[0], 0);
         }
 
-        public static async Task<LuaArguments> Next(LuaArguments args, CancellationToken token = default(CancellationToken))
+        public static Task<LuaArguments> Pairs(LuaArguments args, CancellationToken token = default)
         {
-            throw new NotImplementedException();
+            var handler = args[0].GetMetaMethod("__pairs");
+
+            return !handler.IsNil() 
+                ? handler.CallAsync(args, token) 
+                : Lua.ArgsAsync(LuaObject.FromFunction(Next), args[0], LuaNil.Instance);
         }
 
-        public static async Task<LuaArguments> Pairs(LuaArguments args, CancellationToken token = default(CancellationToken))
+        public static LuaArguments Next(LuaArguments args)
         {
-            throw new NotImplementedException();
+            var table = args[0];
+            var index = args[1];
+
+            if (!table.IsTable())
+            {
+                throw new LuaException("t must be a table");
+            }
+
+            var keys = table.Keys.ToArray();
+
+            if (index.IsNil())
+            {
+                return keys.Length == 0 
+                    ? Lua.Args() 
+                    : Lua.Args(keys[0], table.IndexRaw(keys[0]));
+            }
+
+            var pos = Array.IndexOf(keys, index);
+
+            return pos == keys.Length - 1
+                ? Lua.Args() 
+                : Lua.Args(keys[pos + 1], table.IndexRaw(keys[pos + 1]));
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NetLua.Extensions;
@@ -23,6 +25,8 @@ namespace NetLua.Native.Value
         public LuaTable() : this(LuaNil.Instance)
         {
         }
+
+        public override IEnumerable<LuaObject> Keys => _table.Keys;
 
         public override LuaObject Length => FromNumber(_table.Count);
 

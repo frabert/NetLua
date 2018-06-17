@@ -3,6 +3,8 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +38,8 @@ namespace NetLua.Native.Value
         }
 
         public LuaType Type { get; }
+
+        public virtual IEnumerable<LuaObject> Keys => Enumerable.Empty<LuaObject>();
 
         public LuaObject MetaTable { get; set; }
 

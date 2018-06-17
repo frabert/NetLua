@@ -13,7 +13,7 @@
   <ItemGroup>
     <None Remove="Lua\001_Equals.lua" />
     <None Remove="Lua\002_Context.lua" />
-    <None Remove="Lua\003_For.lua" />
+    <None Remove="Lua\003_Numeric_For.lua" />
     <None Remove="Lua\004_Metatable_Table_Index.lua" />
     <None Remove="Lua\005_Metatable_Table_NewIndex.lua" />
     <None Remove="Lua\006_Metatable_Table_Add.lua" />
@@ -25,6 +25,12 @@
     <None Remove="Lua\012_Metatable_Global.lua" />
     <None Remove="Lua\013_Global.lua" />
     <None Remove="Lua\014_If.lua" />
+    <None Remove="Lua\015_While.lua" />
+    <None Remove="Lua\016_Repeat.lua" />
+    <None Remove="Lua\017_Repeat_Scope.lua" />
+    <None Remove="Lua\018_Generic_For.lua" />
+    <None Remove="Lua\019_Ipairs.lua" />
+    <None Remove="Lua\020_Pairs.lua" />
   </ItemGroup>
 
   <ItemGroup>

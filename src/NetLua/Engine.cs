@@ -82,12 +82,12 @@ namespace NetLua
                     return _statementInterpreter.ExecuteIfStat(ifStat, context, returnState, token);
                 case ReturnStat returnStat:
                     return _statementInterpreter.ExecuteReturnStat(returnStat, context, returnState, token);
-                //case WhileStat whileStat:
-                //    return CompileWhileStat(whileStat, returnTarget, context);
-                //case RepeatStat repeatStat:
-                //    return CompileRepeatStatement(repeatStat, returnTarget, context);
-                //case GenericFor @for:
-                //    return CompileGenericFor(@for, returnTarget, context);
+                case WhileStat whileStat:
+                    return _statementInterpreter.ExecuteWhileStat(whileStat, context, returnState, token);
+                case RepeatStat repeatStat:
+                    return _statementInterpreter.ExecuteRepeatStat(repeatStat, context, returnState, token);
+                case GenericFor genericFor:
+                    return _statementInterpreter.ExecuteGenericFor(genericFor, context, returnState, token);
                 case NumericFor numericFor:
                     return _statementInterpreter.ExecuteNumericFor(numericFor, context, returnState, token);
                 default:
