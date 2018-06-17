@@ -1,12 +1,14 @@
 ﻿local t = {
-	a = 1,
-	b = 2,
-	c = 3
+	[1] = 1,
+	[2] = 2,
+	[3] = 3
 }
-local str = ""
+local found = {}
 
 for k, v in pairs(t) do 
-	str = str .. k .. v
+	found[k] = k == v
 end
 
-assert.Equal("a1b2c3", str)
+assert.True(found[1])
+assert.True(found[2])
+assert.True(found[3])

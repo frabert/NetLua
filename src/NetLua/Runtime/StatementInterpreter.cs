@@ -49,6 +49,13 @@ namespace NetLua.Runtime
 
                     await from.NewIndexAsync(var.Name, ret[0], token);
                 }
+                else if (expr is TableAccess tableAccess)
+                {
+                    var table = await _engine.EvaluateExpression(tableAccess.Expression, context, token).FirstAsync();
+                    var index = await _engine.EvaluateExpression(tableAccess.Index, context, token).FirstAsync();
+
+                    await table.NewIndexAsync(index, ret[0], token);
+                }
                 else
                 {
                     throw new NotImplementedException();
