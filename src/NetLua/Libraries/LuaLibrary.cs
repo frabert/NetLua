@@ -95,22 +95,22 @@ namespace NetLua.Libraries
             }
         }
 
-        private static async Task<LuaArguments> GetNext(LuaArguments x, CancellationToken token = default)
+        private static async Task<LuaArguments> GetNext(Engine engine, LuaArguments x, CancellationToken token = default)
         {
             var s = x[0];
             var var = x[1].AsNumber() + 1;
-            var val = await s.IndexAsync(var, token);
+            var val = await s.IndexAsync(engine, var, token);
 
             return val.IsNil() ? Lua.Args(LuaNil.Instance) : Lua.Args(var, val);
         }
 
-        public static Task<LuaArguments> Ipairs(LuaArguments args, CancellationToken token = default)
+        public static Task<LuaArguments> Ipairs(Engine engine, LuaArguments args, CancellationToken token = default)
         {
-            var handler = args[0].GetMetaMethod("__ipairs");
+            var handler = args[0].GetMetaMethod(engine, "__ipairs");
 
             if (!handler.IsNil())
             {
-                return handler.CallAsync(args, token);
+                return handler.CallAsync(engine, args, token);
             }
 
             if (!args[0].IsTable())
@@ -121,16 +121,16 @@ namespace NetLua.Libraries
             return Lua.ArgsAsync(LuaObject.FromFunction(GetNext), args[0], 0);
         }
 
-        public static Task<LuaArguments> Pairs(LuaArguments args, CancellationToken token = default)
+        public static Task<LuaArguments> Pairs(Engine engine, LuaArguments args, CancellationToken token = default)
         {
-            var handler = args[0].GetMetaMethod("__pairs");
+            var handler = args[0].GetMetaMethod(engine, "__pairs");
 
             return !handler.IsNil() 
-                ? handler.CallAsync(args, token) 
+                ? handler.CallAsync(engine, args, token) 
                 : Lua.ArgsAsync(LuaObject.FromFunction(Next), args[0], LuaNil.Instance);
         }
 
-        public static LuaArguments Next(LuaArguments args)
+        public static LuaArguments Next(Engine engine, LuaArguments args)
         {
             var table = args[0];
             var index = args[1];

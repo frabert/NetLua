@@ -29,15 +29,16 @@ namespace NetLua.Native.Value
             Type = type;
         }
 
-        ~LuaObject()
-        {
-            var method = GetMetaMethod("__gc");
+        // TODO: Re-implement this.
+        //~LuaObject()
+        //{
+        //    var method = GetMetaMethod(TODO, "__gc");
 
-            if (!method.IsNil())
-            {
-                method.CallAsync(Lua.Args(this));
-            }
-        }
+        //    if (!method.IsNil())
+        //    {
+        //        method.CallAsync(Lua.Args(this));
+        //    }
+        //}
 
         public LuaType Type { get; }
 
@@ -47,19 +48,19 @@ namespace NetLua.Native.Value
 
         public virtual LuaObject Length => throw new LuaException($"attempt to get length of a {Type.ToName()} value");
 
-        public virtual LuaObject GetMetaMethod(LuaObject key)
+        public virtual LuaObject GetMetaMethod(Engine engine, LuaObject key)
         {
             return MetaTable.IsNil() ? LuaNil.Instance : MetaTable.IndexRaw(key);
         }
 
-        public virtual Task<LuaObject> IndexAsync(LuaObject key, CancellationToken token = default)
+        public virtual Task<LuaObject> IndexAsync(Engine engine, LuaObject key, CancellationToken token = default)
         {
-            var index = GetMetaMethod("__index");
+            var index = GetMetaMethod(engine, "__index");
 
             switch (index.Type)
             {
                 case LuaType.Function:
-                    return index.CallAsync(Lua.Args(this, key), token).FirstAsync();
+                    return index.CallAsync(engine, Lua.Args(this, key), token).FirstAsync();
                 case LuaType.Nil:
                     return Task.FromResult(IndexRaw(key));
                 default:
@@ -67,14 +68,14 @@ namespace NetLua.Native.Value
             }
         }
 
-        public virtual Task NewIndexAsync(LuaObject key, LuaObject value, CancellationToken token = default)
+        public virtual Task NewIndexAsync(Engine engine, LuaObject key, LuaObject value, CancellationToken token = default)
         {
-            var newindex = GetMetaMethod("__newindex");
+            var newindex = GetMetaMethod(engine, "__newindex");
 
             switch (newindex.Type)
             {
                 case LuaType.Function:
-                    return newindex.CallAsync(Lua.Args(this, key, value), token).FirstAsync();
+                    return newindex.CallAsync(engine, Lua.Args(this, key, value), token).FirstAsync();
                 case LuaType.Nil:
                     NewIndexRaw(key, value);
                     return Task.CompletedTask;
@@ -94,12 +95,13 @@ namespace NetLua.Native.Value
             throw new LuaException($"attempt to index a {Type.ToName()} value");
         }
 
-        public virtual Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        public virtual Task<LuaArguments> CallAsync(Engine engine, LuaArguments args, CancellationToken token = default)
         {
             throw new LuaException($"attempt to call a {Type.ToName()} value");
         }
 
-        public static async Task<LuaObject> BinaryOperationAsync(BinaryOp op, LuaObject left, LuaObject right, CancellationToken token = default)
+        public static async Task<LuaObject> BinaryOperationAsync(Engine engine, BinaryOp op, LuaObject left,
+            LuaObject right, CancellationToken token = default)
         {
             // Metatables
             var metaKey = op.ToMetaKey();
@@ -112,16 +114,16 @@ namespace NetLua.Native.Value
 
             if (!string.IsNullOrEmpty(metaKey) || isDifferent)
             {
-                var meta = left.GetMetaMethod(metaKey);
+                var meta = left.GetMetaMethod(engine, metaKey);
 
                 if (meta.IsNil())
                 {
-                    meta = right.GetMetaMethod(metaKey);
+                    meta = right.GetMetaMethod(engine, metaKey);
                 }
 
                 if (!meta.IsNil())
                 {
-                    var result = await meta.CallAsync(Lua.Args(left, right), token).FirstAsync();
+                    var result = await meta.CallAsync(engine, Lua.Args(left, right), token).FirstAsync();
 
                     if (isDifferent)
                     {
@@ -258,7 +260,7 @@ namespace NetLua.Native.Value
             if (target == typeof(byte)) return (byte)AsNumber();
             if (target == typeof(sbyte)) return (sbyte)AsNumber();
 
-            throw new ArgumentException("Could not transform the Lua Object to the given type", nameof(target));
+            throw new ArgumentException($"Could not transform the Lua Object {GetType().Name} to the type {target.Name}", nameof(target));
         }
 
         public static LuaObject FromBool(bool bl)
@@ -321,9 +323,9 @@ namespace NetLua.Native.Value
                     return FromNumber(b);
                 case sbyte @sbyte:
                     return FromNumber(@sbyte);
-                case Func<LuaArguments, LuaArguments> directFunc:
+                case Func<Engine, LuaArguments, LuaArguments> directFunc:
                     return FromFunction(directFunc);
-                case Func<LuaArguments, CancellationToken, Task<LuaArguments>> asyncFunc:
+                case Func<Engine, LuaArguments, CancellationToken, Task<LuaArguments>> asyncFunc:
                     return FromFunction(asyncFunc);
             }
 
@@ -335,12 +337,12 @@ namespace NetLua.Native.Value
             throw new ArgumentException("Cannot transform the object to a Lua Object", nameof(obj));
         }
 
-        public static LuaObject FromFunction(Func<LuaArguments, CancellationToken, Task<LuaArguments>> func)
+        public static LuaObject FromFunction(Func<Engine, LuaArguments, CancellationToken, Task<LuaArguments>> func)
         {
             return new LuaAsyncFunction(func);
         }
 
-        public static LuaObject FromFunction(Func<LuaArguments, LuaArguments> func)
+        public static LuaObject FromFunction(Func<Engine, LuaArguments, LuaArguments> func)
         {
             return new LuaDirectFunction(func);
         }

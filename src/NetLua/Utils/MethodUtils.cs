@@ -12,18 +12,19 @@ namespace NetLua.Utils
 {
     internal static class MethodUtils
     {
-        public static object[] GetArguments(MethodBase method, LuaArguments args, int offset, CancellationToken token = default)
+        public static object[] GetArguments(MethodBase method, Engine engine, LuaArguments args, int offset, CancellationToken token = default)
         {
             var parameters = method.GetParameters();
             var methodArgs = new object[parameters.Length];
             var argCount = args.Length - offset;
+            var argCounter = 0;
 
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
 
                 // Get the argument
-                if (i >= argCount)
+                if (argCounter >= argCount)
                 {
                     if (parameter.HasDefaultValue)
                     {
@@ -46,9 +47,14 @@ namespace NetLua.Utils
                 {
                     arg = token;
                 }
+                else if (parameter.ParameterType == typeof(Engine))
+                {
+                    arg = engine;
+                }
                 else
                 {
-                    arg = args[i + offset].ToObject(parameter.ParameterType);
+                    arg = args[argCounter + offset].ToObject(parameter.ParameterType);
+                    argCounter++;
                 }
 
                 methodArgs[i] = arg;
@@ -75,7 +81,7 @@ namespace NetLua.Utils
             // Non-async
             if (!isTask)
             {
-                return new LuaDirectFunction(args =>
+                return new LuaDirectFunction((e, args) =>
                 {
                     object self;
                     object[] methodArgs;
@@ -83,12 +89,12 @@ namespace NetLua.Utils
                     if (method.IsStatic)
                     {
                         self = null;
-                        methodArgs = GetArguments(method, args, 0);
+                        methodArgs = GetArguments(method, e, args, 0);
                     }
                     else
                     {
                         self = args[0].ToObject(method.DeclaringType);
-                        methodArgs = GetArguments(method, args, 1);
+                        methodArgs = GetArguments(method, e, args, 1);
                     }
 
                     return CreateArgs(method.Invoke(self, methodArgs));
@@ -98,7 +104,7 @@ namespace NetLua.Utils
             // Async
             var hasReturn = returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>);
 
-            return new LuaAsyncFunction(async (args, token) =>
+            return new LuaAsyncFunction(async (e, args, token) =>
             {
                 object self;
                 object[] methodArgs;
@@ -106,12 +112,12 @@ namespace NetLua.Utils
                 if (method.IsStatic)
                 {
                     self = null;
-                    methodArgs = GetArguments(method, args, 0, token);
+                    methodArgs = GetArguments(method, e, args, 0, token);
                 }
                 else
                 {
                     self = args[0].ToObject(method.DeclaringType);
-                    methodArgs = GetArguments(method, args, 1, token);
+                    methodArgs = GetArguments(method, e, args, 1, token);
                 }
 
                 var task = (Task)method.Invoke(self, methodArgs);

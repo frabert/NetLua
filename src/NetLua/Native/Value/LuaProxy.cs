@@ -79,14 +79,15 @@ namespace NetLua.Native.Value
             property.Info.SetValue(_instance, value.ToObject(property.Info.PropertyType));
         }
 
-        public override Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        public override Task<LuaArguments> CallAsync(Engine engine, LuaArguments args,
+            CancellationToken token = default)
         {
             if (_instance is ICallableProxy proxy)
             {
                 return proxy.CallAsync(args, token);
             }
 
-            return base.CallAsync(args, token);
+            return base.CallAsync(engine, args, token);
         }
     }
 }

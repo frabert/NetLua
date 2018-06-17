@@ -24,12 +24,12 @@ namespace NetLua.Extensions
             return !double.IsNaN(dbl);
         }
 
-        public static void NewIndexLocal(this LuaObject table, LuaObject key, Func<LuaArguments, CancellationToken, Task<LuaArguments>> func)
+        public static void NewIndexLocal(this LuaObject table, LuaObject key, Func<Engine, LuaArguments, CancellationToken, Task<LuaArguments>> func)
         {
             table.NewIndexRaw(key, LuaObject.FromFunction(func));
         }
 
-        public static void NewIndexLocal(this LuaObject table, LuaObject key, Func<LuaArguments, LuaArguments> func)
+        public static void NewIndexLocal(this LuaObject table, LuaObject key, Func<Engine, LuaArguments, LuaArguments> func)
         {
             table.NewIndexRaw(key, LuaObject.FromFunction(func));
         }

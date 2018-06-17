@@ -53,7 +53,7 @@ namespace NetLua
 
         public Task<LuaArguments> ExecuteAsync(string str, LuaArguments args, CancellationToken token = default)
         {
-            return Parse(str).CallAsync(args, token);
+            return Parse(str).CallAsync(this, args, token);
         }
 
         public LuaFunction Parse(string str)

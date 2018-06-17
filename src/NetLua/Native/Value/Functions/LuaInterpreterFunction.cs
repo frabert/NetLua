@@ -22,7 +22,8 @@ namespace NetLua.Native.Value.Functions
 
         public LuaObject Context { get; set; }
 
-        public override async Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        public override async Task<LuaArguments> CallAsync(Engine engine, LuaArguments args,
+            CancellationToken token = default)
         {
             var context = new LuaTableFunction(Context, _useParent);
 
@@ -40,7 +41,7 @@ namespace NetLua.Native.Value.Functions
             }
 
             // Execute the statements.
-            var state = new LuaState(context);
+            var state = new LuaState(engine, context);
             await _engine.ExecuteStatement(_definition.Body, state, token);
 
             return state.FunctionState.ReturnArguments;

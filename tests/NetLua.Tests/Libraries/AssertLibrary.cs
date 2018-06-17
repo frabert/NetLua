@@ -14,9 +14,9 @@ namespace NetLua.Tests.Libraries
     public class AssertLibrary : ICallableProxy
     {
         [LuaMethod("Equal")]
-        public static async Task Equal(LuaObject left, LuaObject right)
+        public static async Task Equal(Engine engine, LuaObject left, LuaObject right)
         {
-            var areEqual = await LuaObject.BinaryOperationAsync(BinaryOp.Equal, left, right);
+            var areEqual = await LuaObject.BinaryOperationAsync(engine, BinaryOp.Equal, left, right);
 
             if (!areEqual)
             {
@@ -25,9 +25,9 @@ namespace NetLua.Tests.Libraries
         }
 
         [LuaMethod("NotEqual")]
-        public static async Task NotEqual(LuaObject left, LuaObject right)
+        public static async Task NotEqual(Engine engine, LuaObject left, LuaObject right)
         {
-            var areDifferent = await LuaObject.BinaryOperationAsync(BinaryOp.Different, left, right);
+            var areDifferent = await LuaObject.BinaryOperationAsync(engine, BinaryOp.Different, left, right);
 
             if (!areDifferent)
             {

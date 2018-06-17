@@ -7,11 +7,14 @@ namespace NetLua.Runtime
 {
     public class LuaState
     {
-        public LuaState(LuaTable context, LuaFunctionState functionState = null)
+        public LuaState(Engine engine, LuaTable context, LuaFunctionState functionState = null)
         {
             Context = context;
+            Engine = engine;
             FunctionState = functionState ?? new LuaFunctionState();
         }
+
+        public Engine Engine { get; set; }
 
         public LuaTable Context { get; set; }
 
@@ -19,7 +22,7 @@ namespace NetLua.Runtime
 
         public LuaState WithContext(LuaTable luaTable)
         {
-            return new LuaState(luaTable, functionState: FunctionState);
+            return new LuaState(Engine, luaTable, functionState: FunctionState);
         }
 
         public LuaState WithNewContext()

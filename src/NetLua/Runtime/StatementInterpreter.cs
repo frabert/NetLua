@@ -44,14 +44,14 @@ namespace NetLua.Runtime
                         ? await _engine.EvaluateExpression(var.Prefix, state, token).FirstAsync()
                         : state.Context;
 
-                    await from.NewIndexAsync(var.Name, ret[0], token);
+                    await from.NewIndexAsync(state.Engine, var.Name, ret[0], token);
                 }
                 else if (expr is TableAccess tableAccess)
                 {
                     var table = await _engine.EvaluateExpression(tableAccess.Expression, state, token).FirstAsync();
                     var index = await _engine.EvaluateExpression(tableAccess.Index, state, token).FirstAsync();
 
-                    await table.NewIndexAsync(index, ret[0], token);
+                    await table.NewIndexAsync(state.Engine, index, ret[0], token);
                 }
                 else
                 {
@@ -87,13 +87,13 @@ namespace NetLua.Runtime
             var forState = state.WithNewContext();
             var compareOp = step < 0d ? BinaryOp.GreaterOrEqual : BinaryOp.LessOrEqual;
 
-            while (!state.FunctionState.DidReturn && !token.IsCancellationRequested && (await LuaObject.BinaryOperationAsync(compareOp, var, limit, token)).AsBool())
+            while (!state.FunctionState.DidReturn && !token.IsCancellationRequested && (await LuaObject.BinaryOperationAsync(state.Engine, compareOp, var, limit, token)).AsBool())
             {
-                await forState.Context.NewIndexAsync(numericFor.Variable, var, token);
+                await forState.Context.NewIndexAsync(state.Engine, numericFor.Variable, var, token);
 
                 await _engine.ExecuteStatement(numericFor.Block, forState, token);
 
-                var = await LuaObject.BinaryOperationAsync(BinaryOp.Addition, var, step, token);
+                var = await LuaObject.BinaryOperationAsync(state.Engine, BinaryOp.Addition, var, step, token);
             }
         }
 
@@ -109,7 +109,7 @@ namespace NetLua.Runtime
 
             while (true)
             {
-                var result = await func.CallAsync(args, token);
+                var result = await func.CallAsync(state.Engine, args, token);
 
                 if (result[0].IsNil())
                 {

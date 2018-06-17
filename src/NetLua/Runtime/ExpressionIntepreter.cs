@@ -25,7 +25,7 @@ namespace NetLua.Runtime
             var left = await _engine.EvaluateExpression(expr.Left, state, token).FirstAsync();
             var right = await _engine.EvaluateExpression(expr.Right, state, token).FirstAsync();
 
-            return await LuaObject.BinaryOperationAsync(expr.Operation, left, right, token).ToArgsAsync();
+            return await LuaObject.BinaryOperationAsync(state.Engine, expr.Operation, left, right, token).ToArgsAsync();
         }
 
         public async Task<LuaArguments> EvaluateTableAccess(TableAccess access, LuaState state, CancellationToken token)
@@ -33,7 +33,7 @@ namespace NetLua.Runtime
             var expr = await _engine.EvaluateExpression(access.Expression, state, token).FirstAsync();
             var index = await _engine.EvaluateExpression(access.Index, state, token).FirstAsync();
 
-            return await expr.IndexAsync(index, token).ToArgsAsync();
+            return await expr.IndexAsync(state.Engine, index, token).ToArgsAsync();
         }
 
         public async Task<LuaArguments> EvaluateGetVariableAsync(Variable variable, LuaState state, CancellationToken token = default)
@@ -47,7 +47,7 @@ namespace NetLua.Runtime
                 throw new LuaException($"attempt to index a nil value near {variable.Name}");
             }
 
-            return await from.IndexAsync(variable.Name, token).ToArgsAsync();
+            return await from.IndexAsync(state.Engine, variable.Name, token).ToArgsAsync();
         }
 
         public async Task<LuaArguments> EvaluateFunctionCall(FunctionCall expr, LuaState state, CancellationToken token = default)
@@ -55,7 +55,7 @@ namespace NetLua.Runtime
             var args = await _engine.EvaluateExpression(expr.Arguments, state, token);
             var function = await _engine.EvaluateExpression(expr.Function, state, token).FirstAsync();
 
-            return await function.CallAsync(args, token);
+            return await function.CallAsync(state.Engine, args, token);
         }
 
         public async Task<LuaArguments> EvaluateUnaryExpression(UnaryExpression expr, LuaState state, CancellationToken token = default)

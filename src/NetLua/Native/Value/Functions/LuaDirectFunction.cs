@@ -7,18 +7,19 @@ namespace NetLua.Native.Value.Functions
 
     public class LuaDirectFunction : LuaFunction
     {
-        private readonly Func<LuaArguments, LuaArguments> _func;
+        private readonly Func<Engine, LuaArguments, LuaArguments> _func;
 
-        public LuaDirectFunction(Func<LuaArguments, LuaArguments> func) 
+        public LuaDirectFunction(Func<Engine, LuaArguments, LuaArguments> func) 
         {
             _func = func;
         }
 
         public LuaObject Context { get; set; }
 
-        public override Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        public override Task<LuaArguments> CallAsync(Engine engine, LuaArguments args,
+            CancellationToken token = default)
         {
-            return Task.FromResult(_func(args));
+            return Task.FromResult(_func(engine, args));
         }
 
         public override object ToObject()

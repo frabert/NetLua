@@ -45,36 +45,37 @@ namespace NetLua.Native.Value
             return _table.ContainsKey(key);
         }
 
-        public override Task<LuaObject> IndexAsync(LuaObject key, CancellationToken token = default)
+        public override Task<LuaObject> IndexAsync(Engine engine, LuaObject key, CancellationToken token = default)
         {
             if (ContainsKey(key))
             {
                 return Task.FromResult(IndexRaw(key));
             }
 
-            var index = GetMetaMethod("__index");
+            var index = GetMetaMethod(engine, "__index");
 
             switch (index.Type)
             {
                 case LuaType.Nil when !Parent.IsNil():
-                    return Parent.IndexAsync(key, token);
+                    return Parent.IndexAsync(engine, key, token);
                 case LuaType.Nil:
                     return Task.FromResult(LuaNil.Instance);
                 case LuaType.Function:
-                    return index.CallAsync(Lua.Args(this, key), token).FirstAsync();
+                    return index.CallAsync(engine, Lua.Args(this, key), token).FirstAsync();
                 default:
                     return Task.FromResult(index.IndexRaw(key));
             }
         }
 
-        public override Task NewIndexAsync(LuaObject key, LuaObject value, CancellationToken token = default)
+        public override Task NewIndexAsync(Engine engine, LuaObject key, LuaObject value,
+            CancellationToken token = default)
         {
-            var newindex = GetMetaMethod("__newindex");
+            var newindex = GetMetaMethod(engine, "__newindex");
             var contains = ContainsKey(key);
 
             if (!Parent.IsNil() && !contains && newindex.IsNil())
             {
-                return Parent.NewIndexAsync(key, value, token);
+                return Parent.NewIndexAsync(engine, key, value, token);
             }
 
             if (contains || newindex.IsNil())
@@ -85,7 +86,7 @@ namespace NetLua.Native.Value
 
             if (newindex.IsFunction())
             {
-                return newindex.CallAsync(Lua.Args(this, key), token);
+                return newindex.CallAsync(engine, Lua.Args(this, key), token);
             }
 
             newindex.NewIndexRaw(key, value);
@@ -102,13 +103,13 @@ namespace NetLua.Native.Value
             _table.AddOrUpdate(key, value, (k, v) => value);
         }
 
-        public override Task<LuaArguments> CallAsync(LuaArguments args, CancellationToken token = default)
+        public override Task<LuaArguments> CallAsync(Engine engine, LuaArguments args, CancellationToken token = default)
         {
-            var call = GetMetaMethod("__call");
+            var call = GetMetaMethod(engine, "__call");
 
             return call.IsFunction() 
-                ? call.CallAsync(args, token) 
-                : base.CallAsync(args, token);
+                ? call.CallAsync(engine, args, token) 
+                : base.CallAsync(engine, args, token);
         }
 
         protected bool Equals(LuaTable other)
