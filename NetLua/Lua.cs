@@ -83,6 +83,18 @@ namespace NetLua
         }
 
         /// <summary>
+        /// Parses and executes the specified parsed block
+        /// </summary>
+        public LuaArguments DoAst(Block block)
+        {
+            FunctionDefinition def = new FunctionDefinition();
+            def.Arguments = new List<Argument>();
+            def.Body = block;
+            var function = LuaCompiler.CompileFunction(def, Expression.Constant(ctx)).Compile();
+            return function().Call(Lua.Return());
+        }
+
+        /// <summary>
         /// The base context
         /// </summary>
         public LuaContext Context
