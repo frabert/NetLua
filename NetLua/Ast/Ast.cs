@@ -21,10 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace NetLua.Ast
 {
@@ -54,18 +51,53 @@ namespace NetLua.Ast
         Length
     }
 
-    public interface IStatement { }
+    public interface IVisitable
+    {
+        void Accept(IVisitor visitor);
+    }
 
-    public interface IExpression { }
+    public interface IStatement : IVisitable { }
 
-    public interface IAssignable : IExpression
-    { }
+    public interface IExpression : IVisitable { }
+
+    public interface IAssignable : IExpression { }
+
+    public interface IVisitor
+    {
+        void Visit(Variable arg);
+        void Visit(StringLiteral arg);
+        void Visit(NumberLiteral arg);
+        void Visit(NilLiteral arg);
+        void Visit(BoolLiteral arg);
+        void Visit(VarargsLiteral arg);
+        void Visit(FunctionCall arg);
+        void Visit(TableAccess arg);
+        void Visit(FunctionDefinition arg);
+        void Visit(BinaryExpression arg);
+        void Visit(UnaryExpression arg);
+        void Visit(TableConstructor arg);
+        void Visit(Assignment arg);
+        void Visit(ReturnStat arg);
+        void Visit(BreakStat arg);
+        void Visit(LocalAssignment arg);
+        void Visit(Block arg);
+        void Visit(WhileStat arg);
+        void Visit(RepeatStat arg);
+        void Visit(NumericFor arg);
+        void Visit(GenericFor arg);
+        void Visit(IfStat arg);
+    }
 
     public class Variable : IExpression, IAssignable
     {
         // Prefix.Name
         public IExpression Prefix;
         public string Name;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class Argument
@@ -76,28 +108,58 @@ namespace NetLua.Ast
     public class StringLiteral : IExpression
     {
         public string Value;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class NumberLiteral : IExpression
     {
         public double Value;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class NilLiteral : IExpression
-    { }
+    {
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
 
     public class BoolLiteral : IExpression
     {
         public bool Value;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class VarargsLiteral : IExpression
-    { }
+    {
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
 
     public class FunctionCall : IStatement, IExpression
     {
         public IExpression Function;
         public List<IExpression> Arguments = new List<IExpression>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class TableAccess : IExpression, IAssignable
@@ -105,6 +167,11 @@ namespace NetLua.Ast
         // Expression[Index]
         public IExpression Expression;
         public IExpression Index;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class FunctionDefinition : IExpression
@@ -112,23 +179,43 @@ namespace NetLua.Ast
         // function(Arguments) Body end
         public List<Argument> Arguments = new List<Argument>();
         public Block Body;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class BinaryExpression : IExpression
     {
         public IExpression Left, Right;
         public BinaryOp Operation;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class UnaryExpression : IExpression
     {
         public IExpression Expression;
         public UnaryOp Operation;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class TableConstructor : IExpression
     {
         public Dictionary<IExpression, IExpression> Values = new Dictionary<IExpression,IExpression>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class Assignment : IStatement
@@ -139,36 +226,72 @@ namespace NetLua.Ast
 
         public List<IAssignable> Variables = new List<IAssignable>();
         public List<IExpression> Expressions = new List<IExpression>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class ReturnStat : IStatement
     {
         public List<IExpression> Expressions = new List<IExpression>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
-    public class BreakStat : IStatement { }
+    public class BreakStat : IStatement
+    {
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
 
     public class LocalAssignment : IStatement
     {
         public List<string> Names = new List<string>();
         public List<IExpression> Values = new List<IExpression>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class Block : IStatement
     {
         public List<IStatement> Statements = new List<IStatement>();
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class WhileStat : IStatement
     {
         public IExpression Condition;
         public Block Block;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class RepeatStat : IStatement
     {
         public Block Block;
         public IExpression Condition;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class NumericFor : IStatement
@@ -176,6 +299,11 @@ namespace NetLua.Ast
         public IExpression Var, Limit, Step;
         public string Variable;
         public Block Block;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class GenericFor : IStatement
@@ -183,6 +311,11 @@ namespace NetLua.Ast
         public List<string> Variables = new List<string>();
         public List<IExpression> Expressions = new List<IExpression>();
         public Block Block;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class IfStat : IStatement
@@ -191,5 +324,10 @@ namespace NetLua.Ast
         public Block Block;
         public List<IfStat> ElseIfs = new List<IfStat>();
         public Block ElseBlock;
+
+        public void Accept(IVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 }
